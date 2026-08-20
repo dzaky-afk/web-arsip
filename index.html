@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setda Bagian Umum - Sistem Manajemen Dokumen (DMS)</title>
+  <meta name="description"
+    content="Sistem Manajemen Dokumen Admin Panel - Setda Bagian Umum. Mengelola, mengorganisasi, dan mengamankan dokumen resmi daerah.">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <div id="app">
+
+    <!-- ==================== 1. LOGIN VIEW ==================== -->
+    <div id="login-view" class="login-wrapper" style="display: flex;">
+      <div class="login-backdrop-decor"></div>
+      <div class="login-card">
+        <div class="secure-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          SECURE ACCESS ONLY
+        </div>
+
+        <div class="login-logo" style="background: transparent; width: auto; height: auto; box-shadow: none;">
+          <img src="logo-gunungkidul.png" alt="Logo Kab. Gunungkidul" class="login-brand-logo-img">
+        </div>
+
+        <h1 class="login-title">Setda Kab. Gunungkidul</h1>
+        <p class="login-subtitle">Sistem Manajemen Dokumen - Bagian Umum</p>
+
+        <form id="login-form" class="login-form">
+          <div class="form-group">
+            <label for="login-username">Username</label>
+            <div class="input-with-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <input type="text" id="login-username" placeholder="Masukkan username" value="budi.santoso" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <div class="input-with-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <input type="password" id="login-password" placeholder="Masukkan password" value="••••••••" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary-block">
+            Masuk ke System DMS
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- ==================== 2. MAIN APP INTERFACE ==================== -->
+    <div id="app-view" style="display: none; width: 100%;">
+
+      <!-- SIDEBAR NAVIGATION -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <img src="logo-gunungkidul.png" alt="Logo Kab. Gunungkidul" class="sidebar-brand-logo-img">
+          <div class="sidebar-brand-info">
+            <h2>Setda Gunungkidul</h2>
+            <p>DMS Bagian Umum</p>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="nav-item active" data-view="dashboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Dashboard
+          </div>
+          <div class="nav-item" data-view="all-documents">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            All Documents
+          </div>
+          <div class="nav-item" data-view="categories">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Categories
+          </div>
+          <div class="nav-item" data-view="uploads">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Uploads
+          </div>
+          <div class="nav-item" data-view="management">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Management
+          </div>
+        </nav>
+
+      </aside>
+
+      <!-- MAIN CONTENT AREA -->
+      <div class="main-wrapper">
+
+        <!-- TOPBAR HEADER -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <div class="topbar-search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="global-search-input" placeholder="Search documents...">
+            </div>
+          </div>
+
+          <div class="topbar-right">
+            <button class="icon-btn" id="btn-toggle-theme" title="Ubah Mode Gelap/Terang">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            </button>
+
+            <button class="icon-btn" id="btn-notifications" title="Notifikasi">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span class="badge-dot"></span>
+            </button>
+
+            <button class="icon-btn" title="Bantuan">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </button>
+
+            <div class="user-profile-menu" id="user-profile-toggle" title="Menu Pengguna">
+              <div class="user-avatar-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <span class="user-profile-name">Budi Santoso</span>
+            </div>
+
+            <!-- USER PROFILE DROPDOWN POPUP -->
+            <div class="profile-menu-dropdown" id="profile-menu-dropdown" style="display: none;">
+              <div class="profile-dropdown-header">
+                <div class="user-avatar-icon" style="width: 40px; height: 40px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <div class="profile-dropdown-info">
+                  <h4>Budi Santoso</h4>
+                  <p>budi.s@setda.gov.id</p>
+                  <span class="profile-dropdown-badge">Admin Setda Bagian Umum</span>
+                </div>
+              </div>
+              <div class="profile-dropdown-list">
+                <div class="profile-dropdown-item" id="btn-open-profile-modal">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  Lihat & Edit Profil
+                </div>
+                <div class="profile-dropdown-item logout" id="btn-logout">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  Keluar (Logout)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOTIFICATION DRAWER POPUP -->
+          <div class="notification-drawer" id="notification-drawer">
+            <div class="notification-header">
+              <span>Pemberitahuan Sistem</span>
+              <button style="font-size: 11.5px; color: var(--primary); font-weight: 600;"
+                id="btn-read-all-notifications">Tandai dibaca</button>
+            </div>
+            <div class="notification-list">
+              <div class="notification-item">
+                <div class="notification-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  </svg>
+                </div>
+                <div class="notification-text">
+                  <p><strong>SK_Bupati_No_45_2024.pdf</strong> memerlukan verifikasi admin.</p>
+                  <span>5 menit yang lalu</span>
+                </div>
+              </div>
+              <div class="notification-item">
+                <div class="notification-icon" style="background: var(--success-bg); color: var(--success);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5"></path>
+                  </svg>
+                </div>
+                <div class="notification-text">
+                  <p><strong>Siti Aminah</strong> berhasil mengunggah Laporan_Triwulan_III.docx.</p>
+                  <span>1 jam yang lalu</span>
+                </div>
+              </div>
+              <div class="notification-item">
+                <div class="notification-icon" style="background: var(--danger-bg); color: var(--danger);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                    </path>
+                  </svg>
+                </div>
+                <div class="notification-text">
+                  <p>Kapasitas penyimpanan server telah mencapai <strong>85%</strong> (428 GB).</p>
+                  <span>3 jam yang lalu</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+
+        <!-- CONTENT CONTAINER FOR PAGE VIEWS -->
+        <main class="content-container">
+
+          <!-- ================= PAGE 1: DASHBOARD VIEW ================= -->
+          <section id="view-dashboard" class="page-view" style="display: block;">
+            <div class="page-header">
+              <div>
+                <h1 class="page-title">Selamat Datang, Staff Bagian Umum</h1>
+                <p class="page-subtitle">Here is the overview of your document management system.</p>
+              </div>
+            </div>
+
+            <!-- STATS GRID -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                  </div>
+                  <span class="stat-badge blue">+12%</span>
+                </div>
+                <div class="stat-label">TOTAL DOCUMENTS</div>
+                <div class="stat-value">12,450</div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                  </div>
+                  <span class="stat-badge blue">+34</span>
+                </div>
+                <div class="stat-label">RECENT UPLOADS (WEEK)</div>
+                <div class="stat-value">156</div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper purple">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="stat-label">CATEGORIES</div>
+                <div class="stat-value">24</div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper red">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <path
+                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                      </path>
+                    </svg>
+                  </div>
+                  <span class="stat-badge red">85%</span>
+                </div>
+                <div class="stat-label">STORAGE USED</div>
+                <div class="stat-value">428 GB</div>
+                <div class="storage-progress">
+                  <div class="storage-progress-bar" style="width: 85%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ANALYTICS CHARTS SECTION -->
+            <div class="stats-grid" style="grid-template-columns: 2fr 1fr; margin-bottom: 24px;">
+              <div class="card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                  <h3 class="card-title">Tren Unggahan Dokumen (Bulanan)</h3>
+                  <span style="font-size: 12px; color: var(--text-muted);">Tahun 2024</span>
+                </div>
+                <!-- Interactive SVG Bar Chart -->
+                <svg viewBox="0 0 500 120" style="width: 100%; height: 130px;">
+                  <rect x="20" y="40" width="24" height="70" rx="4" fill="#bfdbfe" />
+                  <rect x="60" y="30" width="24" height="80" rx="4" fill="#bfdbfe" />
+                  <rect x="100" y="50" width="24" height="60" rx="4" fill="#bfdbfe" />
+                  <rect x="140" y="20" width="24" height="90" rx="4" fill="#bfdbfe" />
+                  <rect x="180" y="35" width="24" height="75" rx="4" fill="#bfdbfe" />
+                  <rect x="220" y="15" width="24" height="95" rx="4" fill="#2563eb" />
+                  <rect x="260" y="45" width="24" height="65" rx="4" fill="#bfdbfe" />
+                  <rect x="300" y="25" width="24" height="85" rx="4" fill="#bfdbfe" />
+                  <rect x="340" y="30" width="24" height="80" rx="4" fill="#bfdbfe" />
+                  <rect x="380" y="10" width="24" height="100" rx="4" fill="#2563eb" />
+                  <rect x="420" y="40" width="24" height="70" rx="4" fill="#bfdbfe" />
+                  <rect x="460" y="20" width="24" height="90" rx="4" fill="#bfdbfe" />
+
+                  <text x="32" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Jan</text>
+                  <text x="72" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Feb</text>
+                  <text x="112" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Mar</text>
+                  <text x="152" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Apr</text>
+                  <text x="192" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Mei</text>
+                  <text x="232" y="120" font-size="10" fill="#2563eb" font-weight="bold" text-anchor="middle">Jun</text>
+                  <text x="272" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Jul</text>
+                  <text x="312" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Agu</text>
+                  <text x="352" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Sep</text>
+                  <text x="392" y="120" font-size="10" fill="#2563eb" font-weight="bold" text-anchor="middle">Okt</text>
+                  <text x="432" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Nov</text>
+                  <text x="472" y="120" font-size="10" fill="#94a3b8" text-anchor="middle">Des</text>
+                </svg>
+              </div>
+
+              <div class="card" style="padding: 20px; text-align: center;">
+                <h3 class="card-title" style="text-align: left; margin-bottom: 12px;">Distribusi Kategori</h3>
+                <svg viewBox="0 0 100 100" style="width: 100px; height: 100px; margin: 0 auto;">
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#2563eb" stroke-width="16"
+                    stroke-dasharray="140 100" />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#8b5cf6" stroke-width="16"
+                    stroke-dasharray="50 190" stroke-dashoffset="-140" />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#10b981" stroke-width="16"
+                    stroke-dasharray="30 210" stroke-dashoffset="-190" />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#f59e0b" stroke-width="16"
+                    stroke-dasharray="20 220" stroke-dashoffset="-220" />
+                </svg>
+                <div
+                  style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; font-size: 11px;">
+                  <span style="color: #2563eb;">■ SK (45%)</span>
+                  <span style="color: #8b5cf6;">■ Kepegawaian (30%)</span>
+                  <span style="color: #10b981;">■ Keuangan (15%)</span>
+                  <span style="color: #f59e0b;">■ Lainnya (10%)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- MAIN DASHBOARD CONTENT GRID -->
+            <div class="dashboard-grid">
+              <!-- RECENT ACTIVITY TABLE CARD -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Recent Activity</h3>
+                  <a href="#" class="card-action-link nav-trigger" data-view="all-documents">View All</a>
+                </div>
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>FILE NAME</th>
+                        <th>CATEGORY</th>
+                        <th>DATE MODIFIED</th>
+                        <th style="text-align: right;">ACTION</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dashboard-recent-table-body">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- QUICK ACCESS CARD -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Quick Access</h3>
+                </div>
+                <div class="quick-access-grid">
+                  <div class="quick-card quick-category-btn" data-category="Surat Keputusan">
+                    <div class="quick-card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                      </svg>
+                    </div>
+                    <span class="quick-card-title">Surat Keputusan</span>
+                  </div>
+
+                  <div class="quick-card quick-category-btn" data-category="Laporan Keuangan">
+                    <div class="quick-card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                        <line x1="8" y1="6" x2="16" y2="6"></line>
+                        <line x1="8" y1="10" x2="16" y2="10"></line>
+                      </svg>
+                    </div>
+                    <span class="quick-card-title">Laporan Keuangan</span>
+                  </div>
+
+                  <div class="quick-card quick-category-btn" data-category="Arsip Umum">
+                    <div class="quick-card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                        <rect x="1" y="3" width="22" height="5"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                      </svg>
+                    </div>
+                    <span class="quick-card-title">Arsip Umum</span>
+                  </div>
+
+                  <div class="quick-card quick-category-btn" data-category="Kepegawaian">
+                    <div class="quick-card-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                    </div>
+                    <span class="quick-card-title">Kepegawaian</span>
+                  </div>
+                </div>
+                <div class="quick-access-footer">
+                  <a href="#" class="card-action-link nav-trigger" data-view="categories">Browse All Categories</a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+
+          <!-- ================= PAGE 2: CATEGORIES VIEW ================= -->
+          <section id="view-categories" class="page-view" style="display: none;">
+            <div class="page-header">
+              <div>
+                <h1 class="page-title">Document Categories</h1>
+                <p class="page-subtitle">Manage and organize organizational document structures.</p>
+              </div>
+              <button class="btn-primary-block" id="btn-add-category"
+                style="width: auto; padding: 10px 18px; margin: 0; background: var(--primary);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add New Category
+              </button>
+            </div>
+
+            <!-- SUMMARY CARDS ROW -->
+            <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg></div>
+                </div>
+                <div class="stat-label">TOTAL CATEGORIES</div>
+                <div class="stat-value">24</div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    </svg></div>
+                </div>
+                <div class="stat-label">TOTAL DOCUMENTS</div>
+                <div class="stat-value">1,842</div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg></div>
+                  <span class="stat-badge red">PENDING REVIEW</span>
+                </div>
+                <div class="stat-label">PENDING REVIEW</div>
+                <div class="stat-value">38</div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <path d="M23 4v6h-6"></path>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg></div>
+                </div>
+                <div class="stat-label">RECENTLY UPDATED</div>
+                <div class="stat-value">12</div>
+              </div>
+            </div>
+
+            <!-- FILTER BAR -->
+            <div class="filter-bar">
+              <div class="filter-tabs">
+                <button class="tab-btn active" data-filter="all">All</button>
+                <button class="tab-btn" data-filter="active">Active</button>
+                <button class="tab-btn" data-filter="archived">Archived</button>
+              </div>
+
+              <div class="filter-controls">
+                <span style="font-size: 13px; color: var(--text-muted);">Sort by:</span>
+                <select class="select-control" id="category-sort-select">
+                  <option value="name">Name (A-Z)</option>
+                  <option value="documents">Most Documents</option>
+                  <option value="recent">Recently Updated</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- CATEGORIES GRID -->
+            <div class="categories-grid" id="categories-cards-container">
+              <!-- Dynamic content -->
+            </div>
+
+            <div style="text-align: center; margin-top: 32px;">
+              <button class="btn-secondary" style="margin: 0 auto;">Load More Categories</button>
+            </div>
+          </section>
+
+
+          <!-- ================= PAGE 4: MANAGEMENT VIEW ================= -->
+          <section id="view-management" class="page-view" style="display: none;">
+            <div class="page-header">
+              <div>
+                <h1 class="page-title">User & System Management</h1>
+                <p class="page-subtitle">Manage staff access levels, roles, and global system configurations.</p>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                  </svg>
+                  System Settings
+                </button>
+                <button class="btn-primary-block" id="btn-add-staff"
+                  style="width: auto; padding: 10px 18px; margin: 0; background: var(--dark-navy);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="17" y1="11" x2="23" y2="11"></line>
+                  </svg>
+                  Add New Staff
+                </button>
+              </div>
+            </div>
+
+            <!-- SUMMARY CARDS ROW -->
+            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                    </svg></div>
+                </div>
+                <div class="stat-label">TOTAL ACTIVE STAFF</div>
+                <div class="stat-value">42 <span
+                    style="font-size: 13px; font-weight: 500; color: var(--text-muted);">Users</span></div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg></div>
+                </div>
+                <div class="stat-label">SYSTEM ADMINS</div>
+                <div class="stat-value">5 <span
+                    style="font-size: 13px; font-weight: 500; color: var(--text-muted);">Users</span></div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-header">
+                  <div class="stat-icon-wrapper red"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="8.5" cy="7" r="4"></circle>
+                      <line x1="18" y1="8" x2="23" y2="13"></line>
+                      <line x1="23" y1="8" x2="18" y2="13"></line>
+                    </svg></div>
+                </div>
+                <div class="stat-label">PENDING INVITES</div>
+                <div class="stat-value">3 <span
+                    style="font-size: 13px; font-weight: 500; color: var(--text-muted);">Awaiting action</span></div>
+              </div>
+            </div>
+
+            <!-- STAFF DIRECTORY TABLE CARD -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Staff Directory</h3>
+                <div style="display: flex; gap: 8px;">
+                  <button class="icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <line x1="4" y1="21" x2="4" y2="14"></line>
+                      <line x1="4" y1="10" x2="4" y2="3"></line>
+                      <line x1="12" y1="21" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12" y2="3"></line>
+                      <line x1="20" y1="21" x2="20" y2="16"></line>
+                      <line x1="20" y1="12" x2="20" y2="3"></line>
+                      <line x1="1" y1="14" x2="7" y2="14"></line>
+                      <line x1="9" y1="8" x2="15" y2="8"></line>
+                      <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg></button>
+                  <button class="icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="1"></circle>
+                      <circle cx="12" cy="5" r="1"></circle>
+                      <circle cx="12" cy="19" r="1"></circle>
+                    </svg></button>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>USER</th>
+                      <th>ROLE</th>
+                      <th>STATUS</th>
+                      <th>LAST ACTIVE</th>
+                      <th style="text-align: right;">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="staff-table-body">
+                    <!-- Dynamic content -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="pagination-container">
+                <span>Showing 1 to 4 of 42 entries</span>
+                <div class="pagination-controls">
+                  <button class="btn-secondary" style="padding: 4px 10px; font-size: 12px;">Prev</button>
+                  <button class="btn-secondary" style="padding: 4px 10px; font-size: 12px;">Next</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+
+          <!-- ================= PAGE 5: ALL DOCUMENTS VIEW ================= -->
+          <section id="view-all-documents" class="page-view" style="display: none;">
+            <div class="page-header">
+              <div>
+                <h1 class="page-title">Daftar Dokumen</h1>
+                <p class="page-subtitle">Manage, view, and organize official administrative documents.</p>
+              </div>
+              <button class="btn-secondary" id="btn-export-csv">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export CSV
+              </button>
+            </div>
+
+            <!-- MULTI FILTER BAR -->
+            <div class="filter-bar" style="flex-wrap: wrap;">
+              <div style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+                <select class="select-control" id="doc-category-filter">
+                  <option value="all">📂 All Categories</option>
+                  <option value="Surat Keputusan">Surat Keputusan</option>
+                  <option value="Laporan Keuangan">Laporan Keuangan</option>
+                  <option value="Kepegawaian">Kepegawaian</option>
+                  <option value="Arsip Umum">Arsip Umum</option>
+                  <option value="MoU & Perjanjian">MoU & Perjanjian</option>
+                </select>
+
+                <select class="select-control" id="doc-year-filter">
+                  <option value="all">📅 All Years</option>
+                  <option value="2024">2024</option>
+                  <option value="2023">2023</option>
+                </select>
+
+                <select class="select-control" id="doc-type-filter">
+                  <option value="all">📄 File Type</option>
+                  <option value="pdf">PDF Document</option>
+                  <option value="docx">Word DOCX</option>
+                  <option value="xlsx">Excel XLSX</option>
+                </select>
+
+                <button class="btn-secondary" id="btn-reset-filters">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                  Reset Filters
+                </button>
+              </div>
+            </div>
+
+            <!-- DOCUMENTS TABLE CARD -->
+            <div class="card">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 40px;"><input type="checkbox" id="select-all-docs"></th>
+                      <th>FILE NAME</th>
+                      <th>CATEGORY</th>
+                      <th>STATUS</th>
+                      <th>DATE UPLOADED</th>
+                      <th>UPLOADER</th>
+                      <th style="text-align: right;">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="documents-table-body">
+                    <!-- Dynamic content -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- PAGINATION BAR -->
+              <div class="pagination-container">
+                <span>Showing 1 to 10 of 97 results</span>
+                <div class="pagination-controls">
+                  <button class="page-btn">&lt;</button>
+                  <button class="page-btn active">1</button>
+                  <button class="page-btn">2</button>
+                  <button class="page-btn">3</button>
+                  <span style="padding: 0 4px;">...</span>
+                  <button class="page-btn">10</button>
+                  <button class="page-btn">&gt;</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+
+          <!-- ================= PAGE 6: UPLOADS VIEW ================= -->
+          <section id="view-uploads" class="page-view" style="display: none;">
+            <div class="page-header">
+              <div>
+                <h1 class="page-title">Upload New Document</h1>
+                <p class="page-subtitle">Securely add new files to the document management system.</p>
+              </div>
+            </div>
+
+            <div class="upload-grid">
+              <!-- DROPZONE BOX -->
+              <div class="dropzone-box" id="upload-dropzone">
+                <input type="file" id="file-input-hidden" style="display: none;" accept=".pdf,.docx,.xlsx">
+                <div class="dropzone-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </div>
+                <h3 class="dropzone-title">Drag & Drop files here</h3>
+                <p class="dropzone-subtitle">or click to browse from your computer</p>
+
+                <div class="file-tags">
+                  <span class="file-tag">PDF</span>
+                  <span class="file-tag">DOCX</span>
+                  <span class="file-tag">XLSX</span>
+                </div>
+                <p style="font-size: 11.5px; color: var(--text-light);">Max file size: 50MB</p>
+
+                <!-- Selected File Preview Badge -->
+                <div id="dropzone-file-preview"
+                  style="display: none; margin-top: 20px; padding: 10px 16px; background: var(--bg-card); border: 1px solid var(--primary-border); border-radius: var(--radius-md); text-align: left; width: 100%;">
+                  <div style="font-weight: 700; color: var(--primary);" id="selected-filename">document.pdf</div>
+                  <div style="font-size: 11px; color: var(--text-muted);" id="selected-filesize">2.4 MB</div>
+                </div>
+              </div>
+
+              <!-- FORM BOX -->
+              <div class="card" style="padding: 28px;">
+                <form id="upload-document-form">
+                  <div class="form-group">
+                    <label for="upload-doc-title">Document Title <span class="required">*</span></label>
+                    <input type="text" id="upload-doc-title" class="form-control"
+                      placeholder="e.g. Surat Keputusan Walikota No 12" required>
+                  </div>
+
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label for="upload-doc-category">Category <span class="required">*</span></label>
+                      <select id="upload-doc-category" class="form-control" required>
+                        <option value="">Select category</option>
+                        <option value="Surat Keputusan">Surat Keputusan</option>
+                        <option value="Laporan Keuangan">Laporan Keuangan</option>
+                        <option value="Kepegawaian">Kepegawaian</option>
+                        <option value="Arsip Umum">Arsip Umum</option>
+                        <option value="MoU & Perjanjian">MoU & Perjanjian</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="upload-doc-date">Document Date</label>
+                      <input type="date" id="upload-doc-date" class="form-control">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="upload-doc-desc">Description</label>
+                    <textarea id="upload-doc-desc" class="form-control"
+                      placeholder="Brief summary or context regarding this document..."></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="upload-doc-tags">Keywords / Tags</label>
+                    <input type="text" id="upload-doc-tags" class="form-control"
+                      placeholder="e.g. anggaran, 2023, rahasia (comma separated)">
+                  </div>
+
+                  <div class="form-group">
+                    <label>Access Permissions</label>
+                    <div class="radio-group">
+                      <label class="radio-label">
+                        <input type="radio" name="access_perm" value="Public to Staff" checked>
+                        Public to Staff
+                      </label>
+                      <label class="radio-label">
+                        <input type="radio" name="access_perm" value="Private (Only Me)">
+                        Private (Only Me)
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btn-cancel-upload">Cancel</button>
+                    <button type="submit" class="btn-primary-block"
+                      style="width: auto; padding: 10px 24px; margin: 0; background: var(--dark-navy);">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                      </svg>
+                      Proses Upload
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+
+
+          <!-- ================= SETTINGS & SUPPORT VIEWS ================= -->
+          <section id="view-settings" class="page-view" style="display: none;">
+            <div class="page-header">
+              <div>
+                <h1 class="page-title">Settings</h1>
+                <p class="page-subtitle">Configure system preferences, storage settings, and security policies.</p>
+              </div>
+            </div>
+            <div class="card" style="padding: 24px;">
+              <h3>Pengaturan Sistem DMS</h3>
+              <p style="color: var(--text-muted); margin-top: 8px;">Pengaturan penyimpanan otomatis, hak akses per grup,
+                dan backup database.</p>
+            </div>
+          </section>
+
+          <section id="view-support" class="page-view" style="display: none;">
+            <div class="page-header">
+              <div>
+                <h1 class="page-title">Support & Documentation</h1>
+                <p class="page-subtitle">Get help with using the document management system.</p>
+              </div>
+            </div>
+            <div class="card" style="padding: 24px;">
+              <h3>Pusat Bantuan DMS Admin Panel</h3>
+              <p style="color: var(--text-muted); margin-top: 8px;">Hubungi tim IT Support Setda Bagian Umum untuk
+                bantuan teknis dan panduan penggunaan.</p>
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ================= MODALS & FLOATING BARS ================= -->
+
+  <!-- BATCH ACTIONS FLOATING BAR -->
+  <div class="batch-actions-bar" id="batch-actions-bar">
+    <span style="font-weight: 600; font-size: 13px;" id="batch-selected-count">0 dokumen dipilih</span>
+    <button class="batch-btn" id="btn-batch-download">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      Unduh ZIP
+    </button>
+    <button class="batch-btn" id="btn-batch-delete">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 6h18"></path>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      </svg>
+      Hapus Terpilih
+    </button>
+  </div>
+
+  <!-- DOCUMENT VIEWER MODAL -->
+  <div class="modal-overlay" id="modal-doc-viewer">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="badge badge-category" id="modal-doc-category-badge">Surat Keputusan</span>
+          <h3 class="modal-title" id="modal-doc-title">SK_Bupati_No_45_2023.pdf</h3>
+        </div>
+        <button class="icon-btn modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="doc-viewer-container">
+          <!-- Document Simulation Paper -->
+          <div class="doc-preview-paper">
+            <div class="doc-paper-header">
+              <h3>PEMERINTAH KABUPATEN / KOTA</h3>
+              <h4>SETDA BAGIAN UMUM</h4>
+              <p>Jl. Praja Utama No. 1, Telp: (021) 555-0199, Fax: (021) 555-0198</p>
+            </div>
+            <div class="doc-paper-body">
+              <p style="text-align: center; font-weight: bold; text-decoration: underline; margin-bottom: 12px;">SURAT
+                KEPUTUSAN BUPATI / WALIKOTA</p>
+              <p><strong>Menimbang:</strong> Bahwa dalam rangka menunjang efisiensi pengelolaan arsip dan tata kelola
+                administrasi pemerintahan daerah yang akuntabel...</p>
+              <br>
+              <p><strong>Mengingat:</strong> Undang-Undang Nomor 43 Tahun 2009 tentang Kearsipan dan Peraturan Menteri
+                Dalam Negeri tentang Tata Naskah Dinas...</p>
+              <br>
+              <p><strong>MEMUTUSKAN:</strong> Menetapkan Sistem Manajemen Dokumen (DMS) Admin Panel Setda Bagian Umum
+                sebagai standar utama kearsipan digital.</p>
+            </div>
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #cbd5e1; pt-8px; font-size: 11px; font-family: sans-serif;">
+              <span>Page 1 of 4 (Zoom 100%)</span>
+              <span style="color: var(--primary); font-weight: bold;">Verified Official Document ✓</span>
+            </div>
+          </div>
+
+          <!-- Metadata & Logs Panel -->
+          <div>
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">Informasi Metadata</h4>
+            <div style="font-size: 12.5px; line-height: 1.8; color: var(--text-muted);">
+              <div><strong>Pengunggah:</strong> <span id="modal-doc-uploader">Budi Santoso</span></div>
+              <div><strong>Tanggal Upload:</strong> <span id="modal-doc-date">24 Oktober 2024</span></div>
+              <div><strong>Ukuran File:</strong> <span id="modal-doc-size">2.4 MB</span></div>
+              <div><strong>Versi Aktif:</strong> <span id="modal-doc-version">v1.0</span></div>
+              <div><strong>Hak Akses:</strong> Public to Staff</div>
+              <div><strong>Status Persetujuan:</strong> <span class="badge-approval approved">Disetujui</span></div>
+            </div>
+
+            <h4 style="font-size: 14px; font-weight: 700; margin: 20px 0 8px 0;">Riwayat Versi</h4>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              <div
+                style="padding: 6px 0; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between;">
+                <span>v1.0 (Versi Awal)</span>
+                <a href="#" onclick="alert('Mengunduh v1.0...')">Unduh</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary modal-close-btn">Tutup</button>
+        <button type="button" class="btn-primary-block"
+          style="width: auto; padding: 8px 18px; margin: 0; background: var(--primary);"
+          onclick="alert('Mengunduh dokumen...')">Unduh Dokumen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD NEW CATEGORY MODAL -->
+  <div class="modal-overlay" id="modal-add-category">
+    <div class="modal-card"
+      style="max-width: 480px; border-radius: var(--radius-xl); overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+      <div class="modal-header"
+        style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); background: var(--bg-body);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="user-avatar-icon"
+            style="width: 38px; height: 38px; background: var(--primary-light); color: var(--primary);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="modal-title" style="font-size: 16px; font-weight: 700; margin: 0; color: var(--text-main);">
+              Tambah Kategori Baru</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Buat kelompok kategori dokumen resmi baru
+            </p>
+          </div>
+        </div>
+        <button class="icon-btn modal-close-btn">&times;</button>
+      </div>
+      <form id="form-add-category">
+        <div class="modal-body" style="padding: 24px;">
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label for="cat-title"
+              style="font-size: 12.5px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Nama
+              Kategori *</label>
+            <div class="input-with-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <input type="text" id="cat-title" class="form-control" placeholder="Contoh: MoU & Perjanjian Kerja Sama"
+                required style="font-size: 13px;">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="cat-desc"
+              style="font-size: 12.5px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Deskripsi
+              Kategori</label>
+            <textarea id="cat-desc" class="form-control"
+              placeholder="Deskripsi singkat seputar fungsi kategori dokumen ini..." rows="3"
+              style="font-size: 13px; resize: none;"></textarea>
+          </div>
+          <div
+            style="padding: 10px 14px; background: var(--primary-light); border: 1px solid var(--primary-border); border-radius: var(--radius-md); font-size: 12px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            Kategori baru akan langsung tampil di menu pengunggahan dan filter.
+          </div>
+        </div>
+        <div class="modal-footer"
+          style="padding: 16px 24px; background: var(--bg-body); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn-secondary modal-close-btn"
+            style="padding: 9px 20px; font-weight: 600;">Batal</button>
+          <button type="submit" class="btn-primary-block"
+            style="width: auto; padding: 9px 24px; margin: 0; background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); font-weight: 600;">Simpan
+            Kategori Baru</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD NEW STAFF MODAL -->
+  <div class="modal-overlay" id="modal-add-staff">
+    <div class="modal-card"
+      style="max-width: 480px; border-radius: var(--radius-xl); overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+      <div class="modal-header"
+        style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); background: var(--bg-body);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="user-avatar-icon"
+            style="width: 38px; height: 38px; background: var(--primary-light); color: var(--primary);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <line x1="20" y1="8" x2="20" y2="14"></line>
+              <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+          </div>
+          <div>
+            <h3 class="modal-title" style="font-size: 16px; font-weight: 700; margin: 0; color: var(--text-main);">
+              Tambah Staf Baru</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Daftarkan akun staf baru Bagian Umum Setda
+            </p>
+          </div>
+        </div>
+        <button class="icon-btn modal-close-btn">&times;</button>
+      </div>
+      <form id="form-add-staff">
+        <div class="modal-body" style="padding: 24px;">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="staff-name"
+              style="font-size: 12.5px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Nama
+              Lengkap *</label>
+            <div class="input-with-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <input type="text" id="staff-name" class="form-control" placeholder="Contoh: Ahmad Fauzi" required
+                style="font-size: 13px;">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="staff-email"
+              style="font-size: 12.5px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Email
+              Resmi Staf *</label>
+            <div class="input-with-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <input type="email" id="staff-email" class="form-control" placeholder="ahmad.fauzi@setda.gov.id" required
+                style="font-size: 13px;">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="staff-role"
+              style="font-size: 12.5px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Hak
+              Akses (Role)</label>
+            <select id="staff-role" class="form-control" required style="font-size: 13px;">
+              <option value="Staff">Staff Bagian Umum</option>
+              <option value="Admin">Admin Setda</option>
+              <option value="Viewer">Viewer (Pratinjau Sahaja)</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer"
+          style="padding: 16px 24px; background: var(--bg-body); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn-secondary modal-close-btn"
+            style="padding: 9px 20px; font-weight: 600;">Batal</button>
+          <button type="submit" class="btn-primary-block"
+            style="width: auto; padding: 9px 24px; margin: 0; background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); font-weight: 600;">Tambah
+            Staf</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- JavaScript Application Bundle -->
+  <script src="app.js"></script>
+</body>
+
+</html>

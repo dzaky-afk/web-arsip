@@ -1,0 +1,1706 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import {
+  LayoutGrid,
+  FileText,
+  Folder,
+  UploadCloud,
+  Users,
+  Settings,
+  HelpCircle,
+  Search,
+  Bell,
+  Sun,
+  Moon,
+  Plus,
+  Download,
+  Trash2,
+  Eye,
+  CheckCircle2,
+  Lock,
+  ArrowRight,
+  RotateCcw,
+  Landmark,
+  Archive,
+  FileCheck,
+  UserPlus,
+  X,
+  Inbox,
+  ExternalLink,
+  Share2,
+  User,
+  LogOut,
+  Key,
+  ShieldCheck,
+  ChevronDown,
+  Menu,
+  Database,
+  HardDrive,
+  Shield,
+  FileSpreadsheet,
+  LifeBuoy,
+  Phone,
+  Mail,
+  BookOpen,
+  ChevronUp
+} from "lucide-react";
+
+// Default System Document Categories
+const DEFAULT_CATEGORIES = [
+  { id: 1, title: "Surat Keputusan", desc: "Dokumen keputusan resmi dan penetapan pimpinan.", status: "active" },
+  { id: 2, title: "Laporan Keuangan", desc: "Laporan realisasi anggaran, keuangan, dan hasil audit.", status: "active" },
+  { id: 3, title: "Kepegawaian", desc: "Berkas kepegawaian, SK jabatan, dan kontrak staf.", status: "active" },
+  { id: 4, title: "Arsip Umum", desc: "Arsip umum dan dokumentasi administrasi daerah.", status: "active" },
+  { id: 5, title: "MoU & Perjanjian", desc: "Nota kesepahaman dan perjanjian kerja sama.", status: "active" }
+];
+
+const CURRENT_USER_STAFF = [
+  { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Just now" }
+];
+
+export default function Home() {
+  const [mounted, setMounted] = useState(false);
+
+  // Mobile Navigation State
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  // App States
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [currentView, setCurrentView] = useState("dashboard");
+  const [darkMode, setDarkMode] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // User Profile State
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState({
+    name: "Budi Santoso",
+    email: "budi.s@setda.gov.id",
+    nip: "19850712 201001 1 008",
+    role: "Admin Setda Bagian Umum",
+    department: "Bagian Umum Setda"
+  });
+  
+  // Real Shared Server State (Google Drive Style Shared Documents)
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>(DEFAULT_CATEGORIES);
+  const [staff, setStaff] = useState<any[]>(CURRENT_USER_STAFF);
+
+  // Filter & Selection States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [catFilter, setCatFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [selectedDocIds, setSelectedDocIds] = useState<number[]>([]);
+
+  // Modal States
+  const [selectedDoc, setSelectedDoc] = useState<any>(null);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+  
+  // Login Access Control States
+  const [loginUsername, setLoginUsername] = useState("budi.santoso");
+  const [loginPassword, setLoginPassword] = useState("••••••••");
+  const [loginError, setLoginError] = useState("");
+  const [isShaking, setIsShaking] = useState(false);
+
+  // Toast State
+  const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
+
+  // Upload Form State
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadCategory, setUploadCategory] = useState("");
+  const [uploadDesc, setUploadDesc] = useState("");
+  const [uploadTags, setUploadTags] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
+
+  const showToastMsg = (message: string, type: string = "info") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // Fetch shared documents from Server API on load
+  const loadSharedDocuments = async () => {
+    try {
+      const res = await fetch("/api/documents");
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data);
+      }
+    } catch (e) {
+      console.error("Failed to load server documents", e);
+    }
+  };
+
+  // Fetch categories from Server API
+  const loadCategories = async () => {
+    try {
+      const res = await fetch("/api/categories");
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data);
+      }
+    } catch (e) {
+      console.error("Failed to load categories", e);
+    }
+  };
+
+  // Fetch staff from Server API
+  const loadStaff = async () => {
+    try {
+      const res = await fetch("/api/staff");
+      if (res.ok) {
+        const data = await res.json();
+        setStaff(data);
+      }
+    } catch (e) {
+      console.error("Failed to load staff", e);
+    }
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    loadSharedDocuments();
+    loadCategories();
+    loadStaff();
+  }, []);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+  }, [darkMode]);
+
+  const getCategoryDocCount = (catTitle: string) => {
+    return documents.filter((d) => d.category === catTitle).length;
+  };
+
+  // Handlers
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+
+    const lowerUser = loginUsername.toLowerCase().trim();
+    const isBagianUmum = lowerUser.includes("umum") || lowerUser.includes("setda") || lowerUser === "budi.santoso" || lowerUser.endsWith(".go.id");
+
+    if (!isBagianUmum) {
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
+      setLoginError("AKSES DITOLAK: Akun Anda bukan terdaftar di Bagian Umum Setda. Sistem ini khusus untuk Staf Bagian Umum.");
+      return;
+    }
+
+    const formattedName = loginUsername.includes("@")
+      ? loginUsername.split("@")[0].replace(/\./g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+      : loginUsername.replace(/\./g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+
+    setCurrentUser((prev) => ({
+      ...prev,
+      name: formattedName || "Staf Bagian Umum",
+      email: loginUsername.includes("@") ? loginUsername : `${loginUsername}@setda.gov.id`
+    }));
+
+    setIsLoggedIn(true);
+    setCurrentView("dashboard");
+    loadSharedDocuments();
+    showToastMsg(`Selamat datang kembali, ${formattedName}!`, "success");
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setShowProfileMenu(false);
+    showToastMsg("Anda telah berhasil keluar dari sistem.", "info");
+  };
+
+  const handleDeleteDocument = async (id: number) => {
+    try {
+      const res = await fetch(`/api/documents?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setDocuments((prev) => prev.filter((d) => d.id !== id));
+        setSelectedDocIds((prev) => prev.filter((docId) => docId !== id));
+        showToastMsg("Dokumen berhasil dihapus dari server pusat.");
+      }
+    } catch (e) {
+      showToastMsg("Gagal menghapus dokumen.", "error");
+    }
+  };
+
+  const handleToggleStaffStatus = async (id: number) => {
+    try {
+      const res = await fetch("/api/staff", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action: "toggle-status" })
+      });
+      if (res.ok) {
+        setStaff((prev) =>
+          prev.map((s) =>
+            s.id === id ? { ...s, status: s.status === "Active" ? "Suspended" : "Active" } : s
+          )
+        );
+        showToastMsg("Status akun staf berhasil diperbarui di server.");
+      }
+    } catch (e) {
+      showToastMsg("Gagal memperbarui status staf.", "error");
+    }
+  };
+
+  const handleExportFullBackup = () => {
+    const backupData = {
+      exportedAt: new Date().toISOString(),
+      system: "DMS Setda Bagian Umum Kab. Gunungkidul",
+      documentsCount: documents.length,
+      categoriesCount: categories.length,
+      staffCount: staff.length,
+      documents,
+      categories,
+      staff
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const link = document.createElement("a");
+    link.setAttribute("href", dataStr);
+    link.setAttribute("download", `DMS_Full_Backup_Setda_${new Date().toISOString().split("T")[0]}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToastMsg("File Backup Database JSON berhasil diunduh!", "success");
+  };
+
+  const handleSelectDoc = (id: number) => {
+    setSelectedDocIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllDocs = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedDocIds(filteredDocuments.map((d) => d.id));
+    } else {
+      setSelectedDocIds([]);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    for (const id of selectedDocIds) {
+      await fetch(`/api/documents?id=${id}`, { method: "DELETE" });
+    }
+    setDocuments((prev) => prev.filter((d) => !selectedDocIds.includes(d.id)));
+    showToastMsg(`${selectedDocIds.length} dokumen berhasil dihapus dari server.`);
+    setSelectedDocIds([]);
+  };
+
+  // Upload file & save metadata to Next.js Server API
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadTitle) return;
+
+    setIsUploading(true);
+    showToastMsg("Mengirim berkas ke server pusat...", "info");
+
+    try {
+      const formData = new FormData();
+      formData.append("title", uploadTitle);
+      formData.append("category", uploadCategory || "Surat Keputusan");
+      formData.append("uploader", "Budi Santoso");
+      formData.append("desc", uploadDesc);
+      formData.append("tags", uploadTags);
+
+      if (selectedFile) {
+        formData.append("file", selectedFile);
+      }
+
+      const res = await fetch("/api/documents", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const newDoc = await res.json();
+        setDocuments((prev) => [newDoc, ...prev]);
+        showToastMsg(`Berkas "${newDoc.name}" berhasil diunggah ke server pusat!`, "success");
+        setUploadTitle("");
+        setUploadCategory("");
+        setUploadDesc("");
+        setUploadTags("");
+        setSelectedFile(null);
+        setCurrentView("all-documents");
+      } else {
+        showToastMsg("Gagal mengunggah berkas ke server.", "error");
+      }
+    } catch (err) {
+      showToastMsg("Terjadi kesalahan koneksi server.", "error");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (documents.length === 0) {
+      showToastMsg("Tidak ada dokumen untuk diekspor.");
+      return;
+    }
+    let csvContent = "data:text/csv;charset=utf-8,ID,Nama File,Kategori,Status,Ukuran,Tanggal,Pengunggah,URL Berkas\n";
+    documents.forEach((d) => {
+      csvContent += `${d.id},"${d.name}","${d.category}",${d.status},${d.size},"${d.date}","${d.uploader}","${d.fileUrl || ''}"\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Daftar_Dokumen_Setda_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToastMsg("File CSV berhasil diunduh!", "success");
+  };
+
+  const filteredDocuments = documents.filter((doc) => {
+    if (catFilter !== "all" && doc.category !== catFilter) return false;
+    if (typeFilter !== "all" && doc.type !== typeFilter) return false;
+    if (
+      searchQuery &&
+      !doc.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !doc.category.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+      return false;
+    return true;
+  });
+
+  if (!mounted) return null;
+
+  if (!isLoggedIn) {
+    return (
+      <div className="login-wrapper">
+        <div className="login-backdrop-decor"></div>
+        <div className={`login-card ${isShaking ? "shake-error" : ""}`}>
+          <div className="secure-badge">
+            <ShieldCheck size={14} /> KHUSUS AKSES BAGIAN UMUM SETDA
+          </div>
+          <div className="login-logo" style={{ background: "transparent", width: "auto", height: "auto", boxShadow: "none" }}>
+            <img src="/logo-gunungkidul.png" alt="Logo Kab. Gunungkidul" className="login-brand-logo-img" />
+          </div>
+          <h1 className="login-title">Setda Kab. Gunungkidul</h1>
+          <p className="login-subtitle">Sistem Manajemen Dokumen - Bagian Umum</p>
+
+          {loginError && (
+            <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid var(--danger)", borderRadius: "var(--radius-md)", padding: "12px", marginBottom: "16px", color: "var(--danger)", fontSize: "12.5px", lineHeight: "1.5", textAlign: "left" }}>
+              <strong>🛑 Akses Ditolak</strong>
+              <div style={{ marginTop: "4px" }}>{loginError}</div>
+            </div>
+          )}
+
+          <form className="login-form" onSubmit={handleLogin}>
+            <div className="form-group">
+              <label>Username / Email Resmi Staf</label>
+              <div className="input-with-icon">
+                <Users size={18} />
+                <input
+                  type="text"
+                  value={loginUsername}
+                  onChange={(e) => {
+                    setLoginUsername(e.target.value);
+                    setLoginError("");
+                  }}
+                  placeholder="budi.santoso@setda.gov.id"
+                  required
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <div className="input-with-icon">
+                <Lock size={18} />
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <button type="submit" className="btn-primary-block">
+              Masuk ke System DMS Bagian Umum <ArrowRight size={16} />
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div id="app">
+      {/* MOBILE BACKDROP OVERLAY */}
+      <div
+        className={`sidebar-overlay ${isMobileSidebarOpen ? "active" : ""}`}
+        onClick={() => setIsMobileSidebarOpen(false)}
+      ></div>
+
+      {/* SIDEBAR */}
+      <aside className={`sidebar ${isMobileSidebarOpen ? "mobile-open" : ""}`}>
+        <div className="sidebar-header">
+          <img src="/logo-gunungkidul.png" alt="Logo Kab. Gunungkidul" className="sidebar-brand-logo-img" />
+          <div className="sidebar-brand-info">
+            <h2>Setda Gunungkidul</h2>
+            <p>DMS Bagian Umum</p>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav">
+          <div
+            className={`nav-item ${currentView === "dashboard" ? "active" : ""}`}
+            onClick={() => { setCurrentView("dashboard"); setIsMobileSidebarOpen(false); }}
+          >
+            <LayoutGrid size={18} /> Dashboard
+          </div>
+          <div
+            className={`nav-item ${currentView === "all-documents" ? "active" : ""}`}
+            onClick={() => { setCurrentView("all-documents"); setIsMobileSidebarOpen(false); }}
+          >
+            <FileText size={18} /> All Documents
+          </div>
+          <div
+            className={`nav-item ${currentView === "categories" ? "active" : ""}`}
+            onClick={() => { setCurrentView("categories"); setIsMobileSidebarOpen(false); }}
+          >
+            <Folder size={18} /> Categories
+          </div>
+          <div
+            className={`nav-item ${currentView === "uploads" ? "active" : ""}`}
+            onClick={() => { setCurrentView("uploads"); setIsMobileSidebarOpen(false); }}
+          >
+            <UploadCloud size={18} /> Uploads
+          </div>
+          <div
+            className={`nav-item ${currentView === "management" ? "active" : ""}`}
+            onClick={() => { setCurrentView("management"); setIsMobileSidebarOpen(false); }}
+          >
+            <Users size={18} /> Management
+          </div>
+          <div
+            className={`nav-item ${currentView === "settings" ? "active" : ""}`}
+            onClick={() => { setCurrentView("settings"); setIsMobileSidebarOpen(false); }}
+          >
+            <Settings size={18} /> Settings
+          </div>
+          <div
+            className={`nav-item ${currentView === "support" ? "active" : ""}`}
+            onClick={() => { setCurrentView("support"); setIsMobileSidebarOpen(false); }}
+          >
+            <HelpCircle size={18} /> Support / Bantuan
+          </div>
+        </nav>
+      </aside>
+
+      {/* MAIN WRAPPER */}
+      <div className="main-wrapper">
+        {/* TOPBAR HEADER */}
+        <header className="topbar">
+          <div className="topbar-left">
+            <button
+              className="mobile-menu-toggle"
+              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+              title="Menu Navigasi Mobile"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="topbar-search">
+              <Search size={16} />
+              <input
+                type="text"
+                placeholder="Search documents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="topbar-right">
+            <button
+              className="icon-btn"
+              onClick={() => setDarkMode(!darkMode)}
+              title="Toggle Dark/Light Mode"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            <button
+              className="icon-btn"
+              onClick={() => setShowNotifications(!showNotifications)}
+              title="Notifications"
+            >
+              <Bell size={20} />
+              {documents.length > 0 && <span className="badge-dot"></span>}
+            </button>
+
+            <div
+              className="user-profile-menu"
+              onClick={() => {
+                setShowProfileMenu(!showProfileMenu);
+                setShowNotifications(false);
+              }}
+              title="Menu Profil Pengguna"
+            >
+              <div className="user-avatar-icon">
+                <User size={18} />
+              </div>
+              <span className="user-profile-name">{currentUser.name}</span>
+            </div>
+          </div>
+
+          {/* PROFILE MENU DROPDOWN */}
+          {showProfileMenu && (
+            <div className="profile-menu-dropdown">
+              <div className="profile-dropdown-header">
+                <div className="user-avatar-icon" style={{ width: "40px", height: "40px" }}>
+                  <User size={20} />
+                </div>
+                <div className="profile-dropdown-info">
+                  <h4>{currentUser.name}</h4>
+                  <p>{currentUser.email}</p>
+                  <span className="profile-dropdown-badge">{currentUser.role}</span>
+                </div>
+              </div>
+              <div className="profile-dropdown-list">
+                <div className="profile-dropdown-item" onClick={() => { setShowProfileModal(true); setShowProfileMenu(false); }}>
+                  <User size={16} /> Lihat & Edit Profil
+                </div>
+                <div className="profile-dropdown-item logout" onClick={handleLogout}>
+                  <LogOut size={16} /> Keluar (Logout)
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* NOTIFICATION DRAWER */}
+          {showNotifications && (
+            <div className="notification-drawer">
+              <div className="notification-header">
+                <span>Pemberitahuan Sistem</span>
+                <button
+                  style={{ fontSize: "11.5px", color: "var(--primary)", fontWeight: 600 }}
+                  onClick={() => setShowNotifications(false)}
+                >
+                  Tutup
+                </button>
+              </div>
+              <div className="notification-list">
+                {documents.length > 0 ? (
+                  documents.slice(0, 3).map((d) => (
+                    <div key={d.id} className="notification-item">
+                      <div className="notification-icon">
+                        <FileText size={16} />
+                      </div>
+                      <div className="notification-text">
+                        <p>
+                          <strong>{d.name}</strong> ditambahkan ke server.
+                        </p>
+                        <span>{d.date}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "12.5px" }}>
+                    Belum ada pemberitahuan baru.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </header>
+
+        {/* CONTENT CONTAINER */}
+        <main className="content-container">
+          {/* VIEW 1: DASHBOARD */}
+          {currentView === "dashboard" && (
+            <section className="page-view">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Selamat Datang, Staff Bagian Umum</h1>
+                  <p className="page-subtitle">Here is the overview of your document management system.</p>
+                </div>
+              </div>
+
+              {/* STATS GRID */}
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <div className="stat-icon-wrapper blue">
+                      <FileText size={20} />
+                    </div>
+                  </div>
+                  <div className="stat-label">TOTAL DOCUMENTS</div>
+                  <div className="stat-value">{documents.length}</div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <div className="stat-icon-wrapper blue">
+                      <UploadCloud size={20} />
+                    </div>
+                  </div>
+                  <div className="stat-label">RECENT UPLOADS</div>
+                  <div className="stat-value">{documents.length}</div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <div className="stat-icon-wrapper purple">
+                      <Folder size={20} />
+                    </div>
+                  </div>
+                  <div className="stat-label">CATEGORIES</div>
+                  <div className="stat-value">{categories.length}</div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <div className="stat-icon-wrapper blue">
+                      <Users size={20} />
+                    </div>
+                  </div>
+                  <div className="stat-label">ACTIVE STAFF</div>
+                  <div className="stat-value">{staff.length}</div>
+                </div>
+              </div>
+
+              {/* DASHBOARD CONTENT GRID */}
+              <div className="dashboard-grid">
+                <div className="card">
+                  <div className="card-header">
+                    <h3 className="card-title">Recent Activity (Server Storage)</h3>
+                    <span className="card-action-link" onClick={() => setCurrentView("all-documents")}>View All</span>
+                  </div>
+                  <div className="table-responsive">
+                    {documents.length > 0 ? (
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>FILE NAME</th>
+                            <th>CATEGORY</th>
+                            <th>DATE MODIFIED</th>
+                            <th style={{ textAlign: "right" }}>ACTION</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {documents.map((doc) => (
+                            <tr key={doc.id} onClick={() => setSelectedDoc(doc)}>
+                              <td>
+                                <div className="file-name-cell">
+                                  <div className={`file-type-icon ${doc.type}`}>{doc.type.toUpperCase()}</div>
+                                  <div>
+                                    <div style={{ fontWeight: 600 }}>{doc.name}</div>
+                                    <div className="file-meta">{doc.size} • {doc.version}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td><span className="badge badge-category">{doc.category}</span></td>
+                              <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{doc.date}</td>
+                              <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                                <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Pratinjau / Unduh">
+                                  <Eye size={16} />
+                                </button>
+                                <button className="icon-btn" onClick={() => handleDeleteDocument(doc.id)} title="Hapus">
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>
+                        <Inbox size={40} style={{ margin: "0 auto 12px auto", opacity: 0.5 }} />
+                        <h4 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-main)", marginBottom: "4px" }}>Belum ada berkas terunggah di server</h4>
+                        <p style={{ fontSize: "13px", marginBottom: "16px" }}>Setiap berkas yang diunggah staf akan langsung tersimpan di server pusat dan dapat diakses oleh semua pengguna.</p>
+                        <button className="btn-primary-block" style={{ width: "auto", margin: "0 auto", padding: "8px 20px" }} onClick={() => setCurrentView("uploads")}>
+                          <UploadCloud size={16} /> Upload Berkas Baru
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="card">
+                  <div className="card-header">
+                    <h3 className="card-title">Quick Access</h3>
+                  </div>
+                  <div className="quick-access-grid">
+                    <div className="quick-card" onClick={() => { setCatFilter("Surat Keputusan"); setCurrentView("all-documents"); }}>
+                      <div className="quick-card-icon"><FileCheck size={20} /></div>
+                      <span className="quick-card-title">Surat Keputusan</span>
+                    </div>
+                    <div className="quick-card" onClick={() => { setCatFilter("Laporan Keuangan"); setCurrentView("all-documents"); }}>
+                      <div className="quick-card-icon"><Landmark size={20} /></div>
+                      <span className="quick-card-title">Laporan Keuangan</span>
+                    </div>
+                    <div className="quick-card" onClick={() => { setCatFilter("Arsip Umum"); setCurrentView("all-documents"); }}>
+                      <div className="quick-card-icon"><Archive size={20} /></div>
+                      <span className="quick-card-title">Arsip Umum</span>
+                    </div>
+                    <div className="quick-card" onClick={() => { setCatFilter("Kepegawaian"); setCurrentView("all-documents"); }}>
+                      <div className="quick-card-icon"><Users size={20} /></div>
+                      <span className="quick-card-title">Kepegawaian</span>
+                    </div>
+                  </div>
+                  <div className="quick-access-footer">
+                    <span className="card-action-link" onClick={() => setCurrentView("categories")}>Browse All Categories</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* VIEW 2: CATEGORIES */}
+          {currentView === "categories" && (
+            <section className="page-view">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Document Categories</h1>
+                  <p className="page-subtitle">Manage and organize organizational document structures.</p>
+                </div>
+                <button
+                  className="btn-primary-block"
+                  style={{ width: "auto", padding: "10px 18px", margin: 0, background: "var(--primary)" }}
+                  onClick={() => setShowAddCategoryModal(true)}
+                >
+                  <Plus size={16} /> Add New Category
+                </button>
+              </div>
+
+              <div className="categories-grid">
+                {categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="category-card"
+                    onClick={() => {
+                      setCatFilter(cat.title);
+                      setCurrentView("all-documents");
+                    }}
+                  >
+                    <div>
+                      <div className="category-card-icon"><Folder size={22} /></div>
+                      <h3 className="category-card-title">{cat.title}</h3>
+                      <p className="category-card-desc">{cat.desc}</p>
+                    </div>
+                    <div className="category-card-meta">
+                      <div className="category-meta-item"><span>BERKAS SERVER</span><strong>{getCategoryDocCount(cat.title)}</strong></div>
+                      <div className="category-meta-item" style={{ textAlign: "right" }}><span>STATUS</span><strong style={{ color: "var(--success)" }}>Active</strong></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* VIEW 3: ALL DOCUMENTS */}
+          {currentView === "all-documents" && (
+            <section className="page-view">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Daftar Dokumen Pusat (Server Shared Storage)</h1>
+                  <p className="page-subtitle">Setiap berkas yang diunggah staf tersimpan di server dan dapat dilihat/diunduh oleh semua pengguna.</p>
+                </div>
+                <button className="btn-secondary" onClick={handleExportCSV}>
+                  <Download size={15} /> Export CSV
+                </button>
+              </div>
+
+              <div className="segmented-filter-wrapper">
+                <div className="segmented-pill-container">
+                  <div
+                    className={`segmented-pill-item ${catFilter === "all" ? "active" : ""}`}
+                    onClick={() => setCatFilter("all")}
+                  >
+                    Semua
+                  </div>
+                  {categories.map((c) => (
+                    <div
+                      key={c.id}
+                      className={`segmented-pill-item ${catFilter === c.title ? "active" : ""}`}
+                      onClick={() => setCatFilter(c.title)}
+                    >
+                      {c.title}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="format-pill-group">
+                  <button
+                    className={`format-pill-btn ${typeFilter === "all" ? "active" : ""}`}
+                    onClick={() => setTypeFilter("all")}
+                  >
+                    Semua Format
+                  </button>
+                  <button
+                    className={`format-pill-btn ${typeFilter === "pdf" ? "active" : ""}`}
+                    onClick={() => setTypeFilter("pdf")}
+                  >
+                    PDF
+                  </button>
+                  <button
+                    className={`format-pill-btn ${typeFilter === "docx" ? "active" : ""}`}
+                    onClick={() => setTypeFilter("docx")}
+                  >
+                    Word
+                  </button>
+                  <button
+                    className={`format-pill-btn ${typeFilter === "xlsx" ? "active" : ""}`}
+                    onClick={() => setTypeFilter("xlsx")}
+                  >
+                    Excel
+                  </button>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="table-responsive">
+                  {filteredDocuments.length > 0 ? (
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: "40px" }}>
+                            <input type="checkbox" onChange={handleSelectAllDocs} checked={selectedDocIds.length > 0 && selectedDocIds.length === filteredDocuments.length} />
+                          </th>
+                          <th>FILE NAME</th>
+                          <th>CATEGORY</th>
+                          <th>STATUS</th>
+                          <th>DATE UPLOADED</th>
+                          <th>UPLOADER</th>
+                          <th style={{ textAlign: "right" }}>ACTIONS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredDocuments.map((doc) => (
+                          <tr key={doc.id} onClick={() => setSelectedDoc(doc)}>
+                            <td onClick={(e) => e.stopPropagation()}>
+                              <input type="checkbox" checked={selectedDocIds.includes(doc.id)} onChange={() => handleSelectDoc(doc.id)} />
+                            </td>
+                            <td>
+                              <div className="file-name-cell">
+                                <div className={`file-type-icon ${doc.type}`}>{doc.type.toUpperCase()}</div>
+                                <div>
+                                  <div style={{ fontWeight: 600 }}>{doc.name}</div>
+                                  <div className="file-meta">{doc.size} • {doc.version}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td><span className="badge badge-category">{doc.category}</span></td>
+                            <td>
+                              <span className="badge-approval approved">Tersimpan di Server</span>
+                            </td>
+                            <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{doc.date}</td>
+                            <td>{doc.uploader}</td>
+                            <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                              <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Lihat / Unduh Berkas"><Eye size={16} /></button>
+                              <button className="icon-btn" onClick={() => handleDeleteDocument(doc.id)} title="Hapus Berkas"><Trash2 size={16} /></button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>
+                      <Inbox size={40} style={{ margin: "0 auto 12px auto", opacity: 0.5 }} />
+                      <h4 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-main)", marginBottom: "4px" }}>Belum ada berkas terunggah</h4>
+                      <p style={{ fontSize: "13px", marginBottom: "16px" }}>Upload berkas asli dari komputer Anda untuk dibagikan ke seluruh staf.</p>
+                      <button className="btn-primary-block" style={{ width: "auto", margin: "0 auto", padding: "8px 20px" }} onClick={() => setCurrentView("uploads")}>
+                        <UploadCloud size={16} /> Upload Berkas Baru
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* VIEW 4: UPLOADS */}
+          {currentView === "uploads" && (
+            <section className="page-view">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Upload New Document (Server Drive)</h1>
+                  <p className="page-subtitle">Berkas yang diunggah akan langsung tersimpan di server dan dapat diakses semua staf.</p>
+                </div>
+              </div>
+
+              <div className="upload-grid">
+                <div className="dropzone-box" onClick={() => document.getElementById("hidden-file-input")?.click()}>
+                  <input
+                    type="file"
+                    id="hidden-file-input"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      if (e.target.files?.length) {
+                        setSelectedFile(e.target.files[0]);
+                        if (!uploadTitle) setUploadTitle(e.target.files[0].name);
+                      }
+                    }}
+                  />
+                  <div className="dropzone-icon"><UploadCloud size={28} /></div>
+                  <h3 className="dropzone-title">Pilih atau Seret Berkas Asli</h3>
+                  <p className="dropzone-subtitle">Klik di sini untuk memilih file dari komputer Anda</p>
+                  <div className="file-tags"><span className="file-tag">PDF</span><span className="file-tag">DOCX</span><span className="file-tag">XLSX</span></div>
+                  {selectedFile && (
+                    <div style={{ marginTop: "16px", padding: "10px 16px", background: "var(--bg-card)", border: "1px solid var(--primary-border)", borderRadius: "var(--radius-md)", textAlign: "left", width: "100%" }}>
+                      <div style={{ fontWeight: 700, color: "var(--primary)" }}>{selectedFile.name}</div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="card" style={{ padding: "28px" }}>
+                  <form onSubmit={handleUploadSubmit}>
+                    <div className="form-group">
+                      <label>Document Title <span className="required">*</span></label>
+                      <input type="text" className="form-control" placeholder="Judul dokumen resmi..." value={uploadTitle} onChange={(e) => setUploadTitle(e.target.value)} required />
+                    </div>
+                    <div className="form-group" style={{ position: "relative" }}>
+                      <label style={{ fontSize: "13px", fontWeight: 700, marginBottom: "8px", display: "block" }}>
+                        Kategori Dokumen <span className="required">*</span>
+                      </label>
+
+                      {/* CUSTOM DROPDOWN BUTTON WITH ARROW */}
+                      <div
+                        className={`custom-cat-select-btn ${isCatDropdownOpen ? "open" : ""}`}
+                        onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <Folder size={18} style={{ color: "var(--primary)" }} />
+                          <span style={{ fontWeight: uploadCategory ? 700 : 500, color: uploadCategory ? "var(--text-main)" : "var(--text-muted)" }}>
+                            {uploadCategory || "Pilih Kategori Dokumen..."}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          size={18}
+                          style={{
+                            transition: "transform 0.2s ease",
+                            transform: isCatDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                            color: "var(--text-muted)"
+                          }}
+                        />
+                      </div>
+
+                      {/* DOWNWARD VERTICAL SCROLLABLE MENU */}
+                      {isCatDropdownOpen && (
+                        <div className="custom-cat-dropdown-menu">
+                          {categories.map((c) => {
+                            const isSelected = uploadCategory === c.title;
+                            return (
+                              <div
+                                key={c.id}
+                                className={`custom-cat-dropdown-item ${isSelected ? "selected" : ""}`}
+                                onClick={() => {
+                                  setUploadCategory(c.title);
+                                  setIsCatDropdownOpen(false);
+                                }}
+                              >
+                                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                  <Folder size={18} style={{ color: "var(--primary)", flexShrink: 0 }} />
+                                  <div>
+                                    <div style={{ fontWeight: 600, fontSize: "13px", color: "var(--text-main)" }}>{c.title}</div>
+                                    <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{c.desc}</div>
+                                  </div>
+                                </div>
+                                {isSelected && <CheckCircle2 size={16} style={{ color: "var(--primary)" }} />}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <div className="form-group">
+                      <label>Description</label>
+                      <textarea className="form-control" placeholder="Brief summary or context regarding this document..." value={uploadDesc} onChange={(e) => setUploadDesc(e.target.value)}></textarea>
+                    </div>
+                    <div className="form-group">
+                      <label>Keywords / Tags</label>
+                      <input type="text" className="form-control" placeholder="e.g. anggaran, 2024, rahasia" value={uploadTags} onChange={(e) => setUploadTags(e.target.value)} />
+                    </div>
+                    <div className="form-actions">
+                      <button type="button" className="btn-secondary" onClick={() => setCurrentView("all-documents")}>Cancel</button>
+                      <button type="submit" className="btn-primary-block" disabled={isUploading} style={{ width: "auto", padding: "10px 24px", margin: 0, background: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}>
+                        <UploadCloud size={16} /> {isUploading ? "Mengunggah..." : "Simpan Berkas ke Server"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* VIEW 5: MANAGEMENT */}
+          {currentView === "management" && (
+            <section className="page-view">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">User & System Management</h1>
+                  <p className="page-subtitle">Manage staff access levels, roles, and global system configurations.</p>
+                </div>
+                <button className="btn-primary-block" style={{ width: "auto", padding: "10px 18px", margin: 0, background: "var(--dark-navy)" }} onClick={() => setShowAddStaffModal(true)}>
+                  <UserPlus size={16} /> Add New Staff
+                </button>
+              </div>
+
+              <div className="card">
+                <div className="table-responsive">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>USER</th>
+                        <th>ROLE</th>
+                        <th>STATUS</th>
+                        <th>LAST ACTIVE</th>
+                        <th style={{ textAlign: "right" }}>ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {staff.map((s) => (
+                        <tr key={s.id}>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                              <div className="user-avatar-icon" style={{ width: "36px", height: "36px", flexShrink: 0 }}>
+                                <User size={18} />
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 700 }}>{s.name}</div>
+                                <div style={{ fontSize: "11.5px", color: "var(--text-muted)" }}>{s.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td><span className={`role-badge ${s.role.toLowerCase()}`}>{s.role}</span></td>
+                          <td>
+                            <div className="badge-status">
+                              <span className={`status-dot ${s.status.toLowerCase()}`}></span>
+                              <span>{s.status}</span>
+                            </div>
+                          </td>
+                          <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{s.lastActive}</td>
+                          <td style={{ textAlign: "right" }}>
+                            <button className="icon-btn" onClick={() => handleToggleStaffStatus(s.id)} title="Ubah Status">
+                              <Settings size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* VIEW 6: SETTINGS */}
+          {currentView === "settings" && (
+            <section className="page-view">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Pengaturan Sistem & Server DMS</h1>
+                  <p className="page-subtitle">Konfigurasi database Supabase PostgreSQL, direktori penyimpanan cloud, dan ekspor backup.</p>
+                </div>
+                <button className="btn-primary-block" style={{ width: "auto", padding: "10px 20px", margin: 0, background: "var(--dark-navy)" }} onClick={handleExportFullBackup}>
+                  <Database size={16} /> Backup Database JSON
+                </button>
+              </div>
+
+              {/* SUPABASE STATUS CARD */}
+              <div className="card" style={{ padding: "24px", marginBottom: "24px", background: "linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(37, 99, 235, 0.04) 100%)", border: "1px solid rgba(16, 185, 129, 0.25)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: "#10b981", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "20px" }}>
+                      ⚡
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "var(--text-main)" }}>Supabase Cloud Database & Storage Mode</h3>
+                      <p style={{ fontSize: "12.5px", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
+                        Database PostgreSQL Supabase terintegrasi dengan fallback otomatis ke database lokal.
+                      </p>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: "12px", fontWeight: 700, background: "var(--success-bg)", color: "var(--success)", padding: "6px 14px", borderRadius: "20px", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
+                    ✓ Supabase Integration Ready
+                  </span>
+                </div>
+
+                <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid var(--border-color)", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px", fontSize: "12.5px" }}>
+                  <div>
+                    <span style={{ color: "var(--text-muted)" }}>Skrip Setup Database:</span>
+                    <div style={{ fontWeight: 700, color: "var(--text-main)", marginTop: "2px" }}>
+                      <code>/dms-app/supabase_schema.sql</code>
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ color: "var(--text-muted)" }}>File Konfigurasi URL & Key:</span>
+                    <div style={{ fontWeight: 700, color: "var(--text-main)", marginTop: "2px" }}>
+                      <code>/dms-app/.env.local</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", marginBottom: "24px" }}>
+                <div className="card" style={{ padding: "24px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                    <div className="stat-icon-wrapper blue"><HardDrive size={22} /></div>
+                    <div>
+                      <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0 }}>Penyimpanan Server Pusat</h3>
+                      <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>Penyimpanan Cloud Storage & Local Fallback</p>
+                    </div>
+                  </div>
+                  <div style={{ background: "var(--bg-body)", padding: "14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", fontSize: "12.5px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                      <span>Cloud Bucket Storage:</span>
+                      <code>Supabase 'documents'</code>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                      <span>Database Tabel:</span>
+                      <code>documents, categories, staff</code>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>Mode Cadangan:</span>
+                      <code>Local JSON Fallback</code>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card" style={{ padding: "24px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                    <div className="stat-icon-wrapper green" style={{ background: "var(--success-bg)", color: "var(--success)" }}><Shield size={22} /></div>
+                    <div>
+                      <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0 }}>Keamanan & Hak Akses</h3>
+                      <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>Proteksi akses khusus Bagian Umum Setda</p>
+                    </div>
+                  </div>
+                  <div style={{ background: "var(--bg-body)", padding: "14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", fontSize: "12.5px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                      <span>Domain Terverifikasi:</span>
+                      <strong>@setda.gov.id / setda.gunungkidulkab.go.id</strong>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                      <span>Metode Enkripsi:</span>
+                      <strong>Supabase RLS & Cloud Storage</strong>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>Batas Maksimum Berkas:</span>
+                      <strong>50 MB per Upload</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: "24px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "8px" }}>Unduh Backup Cadangan Sistem</h3>
+                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>
+                  Ekspor seluruh data dokumen, kategori, dan daftar staf dalam satu paket file JSON resmi untuk keperluan arsip atau pemulihan bencana.
+                </p>
+                <button className="btn-secondary" onClick={handleExportFullBackup} style={{ padding: "10px 20px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <Download size={16} /> Unduh Paket Backup JSON ({documents.length} Dokumen, {categories.length} Kategori, {staff.length} Staf)
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* VIEW 7: SUPPORT */}
+          {currentView === "support" && (
+            <section className="page-view">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Pusat Bantuan & Panduan Penggunaan</h1>
+                  <p className="page-subtitle">Petunjuk teknis dan jawaban pertanyaan umum penggunaan Sistem Manajemen Dokumen Setda.</p>
+                </div>
+              </div>
+
+              {/* QUICK GUIDE CARDS */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px", marginBottom: "28px" }}>
+                <div className="card" style={{ padding: "20px" }}>
+                  <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "var(--primary-light)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "16px", marginBottom: "12px" }}>1</div>
+                  <h4 style={{ fontSize: "14px", fontWeight: 700, marginBottom: "4px" }}>Pilih Kategori Dokumen</h4>
+                  <p style={{ fontSize: "12.5px", color: "var(--text-muted)" }}>Kelompokkan berkas sesuai jenisnya (Surat Keputusan, Keuangan, Kepegawaian, dll).</p>
+                </div>
+                <div className="card" style={{ padding: "20px" }}>
+                  <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "var(--primary-light)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "16px", marginBottom: "12px" }}>2</div>
+                  <h4 style={{ fontSize: "14px", fontWeight: 700, marginBottom: "4px" }}>Upload Berkas Asli</h4>
+                  <p style={{ fontSize: "12.5px", color: "var(--text-muted)" }}>Unggah file PDF, Word, atau Excel dari komputer Anda langsung ke server pusat.</p>
+                </div>
+                <div className="card" style={{ padding: "20px" }}>
+                  <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "var(--primary-light)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "16px", marginBottom: "12px" }}>3</div>
+                  <h4 style={{ fontSize: "14px", fontWeight: 700, marginBottom: "4px" }}>Akses & Cari Mudah</h4>
+                  <p style={{ fontSize: "12.5px", color: "var(--text-muted)" }}>Cari dokumen dengan kata kunci dan pratinjau langsung dari peramban Anda.</p>
+                </div>
+              </div>
+
+              {/* FAQ ACCORDION */}
+              <div className="card" style={{ padding: "24px", marginBottom: "28px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <HelpCircle size={18} style={{ color: "var(--primary)" }} /> Pertanyaan Sering Diajukan (FAQ)
+                </h3>
+
+                {[
+                  {
+                    q: "Bagaimana cara mengunggah dokumen baru ke server?",
+                    a: "Buka menu 'Uploads' dari sidebar navigasi kiri, pilih file dari komputer Anda, isi judul serta kategori dokumen, lalu klik tombol 'Simpan Berkas ke Server'."
+                  },
+                  {
+                    q: "Siapa saja yang dapat mengakses dokumen yang sudah diunggah?",
+                    a: "Seluruh staf Bagian Umum Setda yang memiliki akun terdaftar dapat melihat, melakukan pratinjau, dan mengunduh berkas resmi yang tersimpan di server pusat."
+                  },
+                  {
+                    q: "Apakah berkas di server akan hilang jika saya keluar dari sistem (Logout)?",
+                    a: "Tidak. Seluruh berkas dan metadata tersimpan secara permanen di server pusat Next.js (`/public/uploads/` & `/data/documents.json`), sehingga tetap aman dan dapat diakses kapan saja."
+                  },
+                  {
+                    q: "Format berkas apa saja yang didukung oleh sistem?",
+                    a: "DMS mendukung format dokumen PDF (.pdf), Microsoft Word (.docx), Microsoft Excel (.xlsx), serta gambar (.png, .jpg, .jpeg, .webp)."
+                  }
+                ].map((item, idx) => (
+                  <div key={idx} className="faq-accordion-item">
+                    <div
+                      className="faq-accordion-header"
+                      onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                    >
+                      <span>{item.q}</span>
+                      {openFaqIndex === idx ? <ChevronUp size={18} style={{ color: "var(--primary)" }} /> : <ChevronDown size={18} style={{ color: "var(--text-muted)" }} />}
+                    </div>
+                    {openFaqIndex === idx && (
+                      <div className="faq-accordion-body">
+                        {item.a}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* IT CONTACT CARD */}
+              <div className="card" style={{ padding: "24px", background: "linear-gradient(135deg, rgba(37,99,235,0.04) 0%, rgba(30,58,138,0.06) 100%)", border: "1px solid var(--primary-border)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                  <div style={{ width: "48px", height: "48px", borderRadius: "14px", background: "var(--primary)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <LifeBuoy size={24} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "var(--text-main)" }}>Butuh Bantuan Teknis Tambahan?</h3>
+                    <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: "2px 0 0 0" }}>Hubungi Tim IT Bagian Umum & Kominfo Setda Kab. Gunungkidul</p>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "24px", marginTop: "16px", flexWrap: "wrap", fontSize: "13px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Mail size={16} style={{ color: "var(--primary)" }} />
+                    <span>Email: <strong>helpdesk.setda@gunungkidulkab.go.id</strong></span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Phone size={16} style={{ color: "var(--primary)" }} />
+                    <span>Ekstensi Internal: <strong>Ext. 104 / 105 (Jam Kerja)</strong></span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+        </main>
+      </div>
+
+      {/* FLOATING BATCH ACTIONS BAR */}
+      {selectedDocIds.length > 0 && (
+        <div className="batch-actions-bar">
+          <span style={{ fontWeight: 600, fontSize: "13px" }}>{selectedDocIds.length} dokumen dipilih</span>
+          <button className="batch-btn" onClick={() => showToastMsg("Mengunduh paket ZIP...", "success")}>
+            <Download size={14} /> Unduh ZIP
+          </button>
+          <button className="batch-btn" onClick={handleBatchDelete}>
+            <Trash2 size={14} /> Hapus Terpilih
+          </button>
+        </div>
+      )}
+
+      {/* DOCUMENT VIEWER & DOWNLOAD MODAL */}
+      {selectedDoc && (
+        <div className="modal-overlay active">
+          <div className="modal-card modal-large" style={{ borderRadius: "var(--radius-xl)", overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
+            <div className="modal-header" style={{ background: "linear-gradient(135deg, rgba(37,99,235,0.06) 0%, rgba(99,102,241,0.04) 100%)", padding: "18px 24px", borderBottom: "1px solid var(--border-color)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <span className="badge badge-category" style={{ fontSize: "12px", padding: "4px 12px", fontWeight: 700 }}>{selectedDoc.category}</span>
+                <h3 className="modal-title" style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-main)" }}>{selectedDoc.name}</h3>
+                <span style={{ fontSize: "11px", color: "#059669", background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "3px 10px", borderRadius: "12px", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  ✓ Terverifikasi Server Setda
+                </span>
+              </div>
+              <button className="icon-btn" onClick={() => setSelectedDoc(null)}><X size={18} /></button>
+            </div>
+
+            <div className="modal-body" style={{ padding: "24px" }}>
+              <div className="doc-viewer-container" style={{ gap: "24px" }}>
+                {/* LEFT PREVIEW CONTAINER */}
+                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "var(--radius-lg)", padding: "20px", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "360px", boxShadow: "var(--shadow-sm)" }}>
+                  {selectedDoc.fileUrl ? (
+                    selectedDoc.type === "pdf" ? (
+                      <iframe
+                        src={selectedDoc.fileUrl}
+                        width="100%"
+                        height="420px"
+                        style={{ border: "none", borderRadius: "8px" }}
+                        title={selectedDoc.name}
+                      />
+                    ) : ["png", "jpg", "jpeg", "webp", "svg", "gif"].includes(selectedDoc.type?.toLowerCase()) ? (
+                      <div style={{ textAlign: "center", padding: "12px" }}>
+                        <img
+                          src={selectedDoc.fileUrl}
+                          alt={selectedDoc.name}
+                          style={{ maxWidth: "100%", maxHeight: "400px", objectFit: "contain", borderRadius: "8px", margin: "0 auto", boxShadow: "var(--shadow-md)" }}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: "center", padding: "28px 16px" }}>
+                        <div style={{ width: "80px", height: "80px", borderRadius: "20px", background: "linear-gradient(135deg, var(--dark-navy) 0%, var(--primary) 100%)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "22px", margin: "0 auto 18px auto", boxShadow: "0 10px 25px -5px rgba(37, 99, 235, 0.4)", letterSpacing: "1px" }}>
+                          {selectedDoc.type?.toUpperCase()}
+                        </div>
+                        
+                        <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "1px", background: "var(--primary-light)", padding: "4px 12px", borderRadius: "20px", display: "inline-block", marginBottom: "8px" }}>
+                          Dokumen Resmi Microsoft {selectedDoc.type === "docx" ? "Word" : selectedDoc.type === "xlsx" ? "Excel" : "Office"}
+                        </span>
+                        
+                        <h4 style={{ fontSize: "17px", fontWeight: 700, color: "var(--text-main)", marginBottom: "6px" }}>
+                          {selectedDoc.name}
+                        </h4>
+                        
+                        <p style={{ fontSize: "12.5px", color: "var(--text-muted)", marginBottom: "24px" }}>
+                          Ukuran Berkas: {selectedDoc.size} • Format {selectedDoc.type?.toUpperCase()} • Versi {selectedDoc.version}
+                        </p>
+                        
+                        <div style={{ display: "flex", justifyContent: "center" }}>
+                          <a
+                            href={selectedDoc.fileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-secondary"
+                            style={{ fontSize: "13px", padding: "10px 20px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "8px" }}
+                          >
+                            <ExternalLink size={16} /> Buka Berkas di Tab Baru
+                          </a>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div style={{ padding: "20px", textAlign: "center" }}>
+                      <FileText size={48} style={{ color: "var(--primary)", margin: "0 auto 12px auto", opacity: 0.7 }} />
+                      <h4 style={{ fontWeight: 700, fontSize: "16px", color: "var(--text-main)" }}>{selectedDoc.name}</h4>
+                      <p style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "6px" }}>Kategori: {selectedDoc.category}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* RIGHT METADATA PANEL */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <h4 style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-main)", letterSpacing: "0.5px" }}>
+                    INFORMASI METADATA SERVER
+                  </h4>
+
+                  {/* USER CARD */}
+                  <div style={{ background: "var(--bg-body)", padding: "14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div className="user-avatar-icon" style={{ width: "40px", height: "40px", flexShrink: 0 }}>
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>PENGUNGGAH BERKAS</div>
+                      <div style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--text-main)" }}>{selectedDoc.uploader}</div>
+                      <div style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 600 }}>Staf Bagian Umum Setda</div>
+                    </div>
+                  </div>
+
+                  {/* DATE & SIZE CARD */}
+                  <div style={{ background: "var(--bg-body)", padding: "14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    <div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>TANGGAL UPLOAD</div>
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-main)", marginTop: "2px" }}>{selectedDoc.date}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>UKURAN FILE</div>
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-main)", marginTop: "2px" }}>{selectedDoc.size}</div>
+                    </div>
+                  </div>
+
+                  {/* SECURITY CARD */}
+                  <div style={{ background: "rgba(30, 58, 138, 0.05)", padding: "14px", borderRadius: "var(--radius-md)", border: "1px solid rgba(37, 99, 235, 0.15)" }}>
+                    <div style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 700, textTransform: "uppercase", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Lock size={13} /> ENKRIPSI & KEAMANAN
+                    </div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.5 }}>
+                      Tersimpan di Cloud Server Setda dengan enkripsi AES 256-bit. Dapat diakses oleh seluruh staf terverifikasi.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer" style={{ padding: "16px 24px", background: "var(--bg-body)", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+              <button className="btn-secondary" onClick={() => setSelectedDoc(null)} style={{ padding: "9px 20px", fontWeight: 600 }}>Tutup</button>
+              {selectedDoc.fileUrl ? (
+                <a
+                  href={selectedDoc.fileUrl}
+                  download={selectedDoc.name}
+                  className="btn-primary-block"
+                  style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, var(--dark-navy) 0%, var(--primary) 100%)", textDecoration: "none", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}
+                >
+                  <Download size={16} /> Unduh Berkas Asli
+                </a>
+              ) : (
+                <button
+                  className="btn-primary-block"
+                  style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, var(--dark-navy) 0%, var(--primary) 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}
+                  onClick={() => showToastMsg("Mengunduh berkas...", "success")}
+                >
+                  <Download size={16} /> Unduh Dokumen
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD CATEGORY MODAL */}
+      {showAddCategoryModal && (
+        <div className="modal-overlay active">
+          <div className="modal-card" style={{ maxWidth: "480px", borderRadius: "var(--radius-xl)", overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
+            <div className="modal-header" style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-color)", background: "var(--bg-body)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div className="user-avatar-icon" style={{ width: "38px", height: "38px", background: "var(--primary-light)", color: "var(--primary)" }}>
+                  <Folder size={20} />
+                </div>
+                <div>
+                  <h3 className="modal-title" style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "var(--text-main)" }}>Tambah Kategori Baru</h3>
+                  <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>Buat kelompok kategori dokumen resmi baru</p>
+                </div>
+              </div>
+              <button className="icon-btn" onClick={() => setShowAddCategoryModal(false)}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const title = (e.target as any).catTitle.value;
+              const desc = (e.target as any).catDesc.value;
+              try {
+                const res = await fetch("/api/categories", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ title, desc })
+                });
+                if (res.ok) {
+                  const newCat = await res.json();
+                  setCategories((prev) => [...prev, newCat]);
+                  setShowAddCategoryModal(false);
+                  showToastMsg(`Kategori "${title}" berhasil disimpan di server!`, "success");
+                }
+              } catch (err) {
+                showToastMsg("Gagal menyimpan kategori ke server.", "error");
+              }
+            }}>
+              <div className="modal-body" style={{ padding: "24px" }}>
+                <div className="form-group" style={{ marginBottom: "18px" }}>
+                  <label style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--text-main)", marginBottom: "6px", display: "block" }}>Nama Kategori *</label>
+                  <div className="input-with-icon">
+                    <Folder size={16} />
+                    <input type="text" name="catTitle" className="form-control" placeholder="Contoh: MoU & Perjanjian Kerja Sama" required style={{ fontSize: "13px" }} />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--text-main)", marginBottom: "6px", display: "block" }}>Deskripsi Kategori</label>
+                  <textarea name="catDesc" className="form-control" placeholder="Deskripsi singkat seputar fungsi kategori dokumen ini..." rows={3} style={{ fontSize: "13px", resize: "none" }}></textarea>
+                </div>
+
+                <div style={{ padding: "10px 14px", background: "var(--primary-light)", border: "1px solid var(--primary-border)", borderRadius: "var(--radius-md)", fontSize: "12px", color: "var(--primary)", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
+                  <CheckCircle2 size={15} /> Kategori baru akan langsung tersimpan permanen di server.
+                </div>
+              </div>
+
+              <div className="modal-footer" style={{ padding: "16px 24px", background: "var(--bg-body)", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowAddCategoryModal(false)} style={{ padding: "9px 20px", fontWeight: 600 }}>Batal</button>
+                <button type="submit" className="btn-primary-block" style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}>
+                  Simpan Kategori Baru
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD STAFF MODAL */}
+      {showAddStaffModal && (
+        <div className="modal-overlay active">
+          <div className="modal-card" style={{ maxWidth: "480px", borderRadius: "var(--radius-xl)", overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
+            <div className="modal-header" style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-color)", background: "var(--bg-body)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div className="user-avatar-icon" style={{ width: "38px", height: "38px", background: "var(--primary-light)", color: "var(--primary)" }}>
+                  <UserPlus size={20} />
+                </div>
+                <div>
+                  <h3 className="modal-title" style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "var(--text-main)" }}>Tambah Staf Baru</h3>
+                  <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>Daftarkan akun staf baru Bagian Umum Setda</p>
+                </div>
+              </div>
+              <button className="icon-btn" onClick={() => setShowAddStaffModal(false)}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const name = (e.target as any).staffName.value;
+              const email = (e.target as any).staffEmail.value;
+              const role = (e.target as any).staffRole.value;
+              try {
+                const res = await fetch("/api/staff", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ name, email, role })
+                });
+                if (res.ok) {
+                  const newStaff = await res.json();
+                  setStaff((prev) => [...prev, newStaff]);
+                  setShowAddStaffModal(false);
+                  showToastMsg(`Staf "${name}" berhasil didaftarkan di server!`, "success");
+                }
+              } catch (err) {
+                showToastMsg("Gagal mendaftarkan staf ke server.", "error");
+              }
+            }}>
+              <div className="modal-body" style={{ padding: "24px" }}>
+                <div className="form-group" style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--text-main)", marginBottom: "6px", display: "block" }}>Nama Lengkap *</label>
+                  <div className="input-with-icon">
+                    <User size={16} />
+                    <input type="text" name="staffName" className="form-control" placeholder="Contoh: Ahmad Fauzi" required style={{ fontSize: "13px" }} />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--text-main)", marginBottom: "6px", display: "block" }}>Email Resmi Staf *</label>
+                  <div className="input-with-icon">
+                    <Inbox size={16} />
+                    <input type="email" name="staffEmail" className="form-control" placeholder="ahmad.fauzi@setda.gov.id" required style={{ fontSize: "13px" }} />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--text-main)", marginBottom: "6px", display: "block" }}>Hak Akses (Role)</label>
+                  <select name="staffRole" className="form-control" style={{ fontSize: "13px" }}>
+                    <option value="Staff">Staff Bagian Umum</option>
+                    <option value="Admin">Admin Setda</option>
+                    <option value="Viewer">Viewer (Pratinjau Sahaja)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="modal-footer" style={{ padding: "16px 24px", background: "var(--bg-body)", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowAddStaffModal(false)} style={{ padding: "9px 20px", fontWeight: 600 }}>Batal</button>
+                <button type="submit" className="btn-primary-block" style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}>
+                  Tambah Staf
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* PROFILE EDIT MODAL */}
+      {showProfileModal && (
+        <div className="modal-overlay active">
+          <div className="modal-card" style={{ maxWidth: "540px", borderRadius: "var(--radius-xl)", overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
+            <div className="modal-header" style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-color)", background: "var(--bg-body)" }}>
+              <div>
+                <h3 className="modal-title" style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "var(--text-main)" }}>Profil Pengguna</h3>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>Pengaturan identitas staf Bagian Umum Setda</p>
+              </div>
+              <button className="icon-btn" onClick={() => setShowProfileModal(false)}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const name = (e.target as any).profName.value;
+              const email = (e.target as any).profEmail.value;
+              const nip = (e.target as any).profNip.value;
+              const dept = (e.target as any).profDept.value;
+              setCurrentUser((prev) => ({ ...prev, name, email, nip, department: dept }));
+              setShowProfileModal(false);
+              showToastMsg("Profil pengguna berhasil diperbarui!", "success");
+            }}>
+              <div className="modal-body" style={{ padding: "24px" }}>
+                {/* PROFILE HEADER BADGE BOX */}
+                <div style={{ background: "var(--bg-body)", border: "1px solid var(--border-color)", borderRadius: "var(--radius-lg)", padding: "16px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
+                  <div className="user-avatar-icon" style={{ width: "52px", height: "52px" }}>
+                    <User size={26} />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-main)", margin: 0 }}>{currentUser.name}</h4>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{currentUser.email}</div>
+                    <div style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "4px", marginTop: "6px", background: "var(--primary-light)", padding: "2px 10px", borderRadius: "12px" }}>
+                      <ShieldCheck size={12} /> {currentUser.role}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: "12px", fontWeight: 700 }}>Nama Lengkap *</label>
+                    <div className="input-with-icon">
+                      <User size={16} />
+                      <input type="text" name="profName" defaultValue={currentUser.name} required style={{ fontSize: "13px" }} />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: "12px", fontWeight: 700 }}>Email Resmi *</label>
+                    <div className="input-with-icon">
+                      <Inbox size={16} />
+                      <input type="email" name="profEmail" defaultValue={currentUser.email} required style={{ fontSize: "13px" }} />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: "12px", fontWeight: 700 }}>NIP (Nomor Induk Pegawai)</label>
+                    <div className="input-with-icon">
+                      <FileText size={16} />
+                      <input type="text" name="profNip" defaultValue={currentUser.nip} style={{ fontSize: "13px" }} />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: "12px", fontWeight: 700 }}>Unit / Bagian</label>
+                    <div className="input-with-icon">
+                      <Landmark size={16} />
+                      <input type="text" name="profDept" defaultValue={currentUser.department} style={{ fontSize: "13px" }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "20px", padding: "12px 16px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.2)", borderRadius: "var(--radius-md)", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <ShieldCheck size={18} style={{ color: "#059669" }} />
+                  <div style={{ fontSize: "12px", color: "var(--text-main)" }}>
+                    <strong>Status Akun: Terverifikasi Server Setda</strong> (Hak akses Admin DMS Bagian Umum)
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer" style={{ padding: "16px 24px", background: "var(--bg-body)", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowProfileModal(false)} style={{ padding: "9px 20px", fontWeight: 600 }}>Batal</button>
+                <button type="submit" className="btn-primary-block" style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, var(--dark-navy) 0%, var(--primary) 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}>
+                  Simpan Perubahan Profil
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST NOTIFICATION */}
+      {toast && (
+        <div className="toast-container">
+          <div className={`toast ${toast.type}`}>
+            <CheckCircle2 size={18} />
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

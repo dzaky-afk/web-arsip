@@ -1,0 +1,10 @@
+{
+  "name": "web-untuk-umum",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix dms-app run dev",
+    "build": "npm --prefix dms-app run build",
+    "start": "npm --prefix dms-app run start"
+  }
+}

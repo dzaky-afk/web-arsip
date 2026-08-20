@@ -1,0 +1,7 @@
+[
+  { "id": 1, "title": "Surat Keputusan", "desc": "Dokumen keputusan resmi dan penetapan pimpinan.", "status": "active" },
+  { "id": 2, "title": "Laporan Keuangan", "desc": "Laporan realisasi anggaran, keuangan, dan hasil audit.", "status": "active" },
+  { "id": 3, "title": "Kepegawaian", "desc": "Berkas kepegawaian, SK jabatan, dan kontrak staf.", "status": "active" },
+  { "id": 4, "title": "Arsip Umum", "desc": "Arsip umum dan dokumentasi administrasi daerah.", "status": "active" },
+  { "id": 5, "title": "MoU & Perjanjian", "desc": "Nota kesepahaman dan perjanjian kerja sama.", "status": "active" }
+]

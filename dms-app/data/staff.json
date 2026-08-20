@@ -1,0 +1,5 @@
+[
+  { "id": 1, "name": "Budi Santoso", "email": "budi.s@setda.gov.id", "role": "Admin", "status": "Active", "lastActive": "Just now" },
+  { "id": 2, "name": "Ahmad Fauzi", "email": "ahmad.f@setda.gov.id", "role": "Staff", "status": "Active", "lastActive": "2 hours ago" },
+  { "id": 3, "name": "Siti Nurhaliza", "email": "siti.n@setda.gov.id", "role": "Viewer", "status": "Active", "lastActive": "Yesterday" }
+]
