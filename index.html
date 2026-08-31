@@ -42,16 +42,23 @@
         <h1 class="login-title">Setda Kab. Gunungkidul</h1>
         <p class="login-subtitle">Sistem Manajemen Dokumen - Bagian Umum</p>
 
+        <div id="login-error-container" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; color: var(--danger); font-size: 12.5px; line-height: 1.5; text-align: left;">
+          <strong>🛑 Akses Ditolak</strong>
+          <div id="login-error-text" style="margin-top: 4px;"></div>
+        </div>
+
         <form id="login-form" class="login-form">
           <div class="form-group">
-            <label for="login-username">Username</label>
+            <label for="login-nip">NIP (Nomor Induk Pegawai)</label>
             <div class="input-with-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+                <rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
               </svg>
-              <input type="text" id="login-username" placeholder="Masukkan username" value="budi.santoso" required>
+              <input type="text" id="login-nip" placeholder="Contoh: 19850712 201001 1 008" value="19850712 201001 1 008" maxlength="22" required>
             </div>
           </div>
 
@@ -76,6 +83,15 @@
             </svg>
           </button>
         </form>
+
+        <div class="login-demo-helper" style="margin-top: 20px; padding: 12px; background: var(--primary-light); border: 1px solid var(--primary-border); border-radius: var(--radius-md); font-size: 11.5px; text-align: left; color: var(--text-main);">
+          <div style="font-weight: 700; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+            ℹ️ Info Uji Coba Login NIP
+          </div>
+          <div><strong>Staf Bagian Umum:</strong> 19850712 201001 1 008</div>
+          <div><strong>Staf Bagian Lain (Protokol):</strong> 19910324 201503 2 002</div>
+          <div style="margin-top: 4px; font-size: 10.5px; color: var(--text-muted);">* Sistem akan mendeteksi Bagian/Unit Kerja secara otomatis berdasarkan NIP. Hanya Staf Bagian Umum yang diberikan izin masuk.</div>
+        </div>
       </div>
     </div>
 
@@ -193,7 +209,7 @@
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
               </div>
-              <span class="user-profile-name">Budi Santoso</span>
+              <span class="user-profile-name" id="user-profile-name-display">Budi Santoso</span>
             </div>
 
             <!-- USER PROFILE DROPDOWN POPUP -->
@@ -206,9 +222,9 @@
                   </svg>
                 </div>
                 <div class="profile-dropdown-info">
-                  <h4>Budi Santoso</h4>
-                  <p>budi.s@setda.gov.id</p>
-                  <span class="profile-dropdown-badge">Admin Setda Bagian Umum</span>
+                  <h4 id="user-dropdown-name">Budi Santoso</h4>
+                  <p id="user-dropdown-email">budi.s@setda.gov.id</p>
+                  <span class="profile-dropdown-badge" id="user-dropdown-role">Admin Setda Bagian Umum</span>
                 </div>
               </div>
               <div class="profile-dropdown-list">
@@ -1014,7 +1030,7 @@
                 sebagai standar utama kearsipan digital.</p>
             </div>
             <div
-              style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #cbd5e1; pt-8px; font-size: 11px; font-family: sans-serif;">
+              style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 11px; font-family: sans-serif;">
               <span>Page 1 of 4 (Zoom 100%)</span>
               <span style="color: var(--primary); font-weight: bold;">Verified Official Document ✓</span>
             </div>

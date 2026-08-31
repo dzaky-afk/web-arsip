@@ -6,9 +6,10 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 const STAFF_FILE = path.join(process.cwd(), "data", "staff.json");
 
 const DEFAULT_STAFF = [
-  { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Just now" },
-  { id: 2, name: "Ahmad Fauzi", email: "ahmad.f@setda.gov.id", role: "Staff", status: "Active", lastActive: "2 hours ago" },
-  { id: 3, name: "Siti Nurhaliza", email: "siti.n@setda.gov.id", role: "Viewer", status: "Active", lastActive: "Yesterday" }
+  { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Just now", nip: "19850712 201001 1 008", division: "Umum" },
+  { id: 2, name: "Ahmad Fauzi", email: "ahmad.f@setda.gov.id", role: "Staff", status: "Active", lastActive: "2 hours ago", nip: "19900815 201402 1 005", division: "Umum" },
+  { id: 3, name: "Siti Nurhaliza", email: "siti.n@setda.gov.id", role: "Viewer", status: "Active", lastActive: "Yesterday", nip: "19951210 201901 2 001", division: "Umum" },
+  { id: 4, name: "Hendra Wijaya", email: "hendra.w@setda.gov.id", role: "Staff", status: "Active", lastActive: "3 days ago", nip: "19910324 201503 2 002", division: "Protokol" }
 ];
 
 function ensureStaffExists() {
@@ -48,7 +49,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, email, role } = body;
+    const { name, email, role, nip, division } = body;
 
     if (!name || !email) {
       return NextResponse.json({ error: "Name and Email are required" }, { status: 400 });
@@ -60,7 +61,9 @@ export async function POST(req: NextRequest) {
       email: email.trim(),
       role: role || "Staff",
       status: "Active",
-      lastActive: "Baru saja"
+      lastActive: "Baru saja",
+      nip: nip ? nip.trim() : `199${Math.floor(Math.random()*10)}0${Math.floor(Math.random()*9)+1}${Math.floor(Math.random()*28)+1} 202${Math.floor(Math.random()*5)}01 ${Math.floor(Math.random()*2)+1} 00${Math.floor(Math.random()*9)+1}`,
+      division: division || "Umum"
     };
 
     if (isSupabaseConfigured && supabase) {

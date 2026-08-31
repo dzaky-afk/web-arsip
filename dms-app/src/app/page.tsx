@@ -67,7 +67,7 @@ export default function Home() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // App States
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentView, setCurrentView] = useState("dashboard");
   const [darkMode, setDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -100,7 +100,7 @@ export default function Home() {
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   
   // Login Access Control States
-  const [loginUsername, setLoginUsername] = useState("budi.santoso");
+  const [loginNip, setLoginNip] = useState("19850712 201001 1 008");
   const [loginPassword, setLoginPassword] = useState("••••••••");
   const [loginError, setLoginError] = useState("");
   const [isShaking, setIsShaking] = useState(false);
@@ -185,30 +185,56 @@ export default function Home() {
     e.preventDefault();
     setLoginError("");
 
-    const lowerUser = loginUsername.toLowerCase().trim();
-    const isBagianUmum = lowerUser.includes("umum") || lowerUser.includes("setda") || lowerUser === "budi.santoso" || lowerUser.endsWith(".go.id");
+    const cleanNip = loginNip.replace(/\D/g, "");
 
-    if (!isBagianUmum) {
+    // 1. Validate NIP length
+    if (cleanNip.length !== 18) {
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 600);
-      setLoginError("AKSES DITOLAK: Akun Anda bukan terdaftar di Bagian Umum Setda. Sistem ini khusus untuk Staf Bagian Umum.");
+      setLoginError("Format NIP salah. NIP harus terdiri dari 18 digit angka.");
       return;
     }
 
-    const formattedName = loginUsername.includes("@")
-      ? loginUsername.split("@")[0].replace(/\./g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-      : loginUsername.replace(/\./g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+    // 2. Validate Division based on NIP lookup in staff list
+    // Fallback if staff list API is not loaded yet
+    const localAllowedStaff: {[key: string]: any} = {
+      "198507122010011008": { name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin Setda Bagian Umum", division: "Umum" }
+    };
 
-    setCurrentUser((prev) => ({
-      ...prev,
-      name: formattedName || "Staf Bagian Umum",
-      email: loginUsername.includes("@") ? loginUsername : `${loginUsername}@setda.gov.id`
-    }));
+    let foundStaff = staff.find((s) => s.nip && s.nip.replace(/\D/g, "") === cleanNip);
+    
+    if (!foundStaff && localAllowedStaff[cleanNip]) {
+      foundStaff = localAllowedStaff[cleanNip];
+    }
+
+    if (!foundStaff) {
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
+      setLoginError("Akses Ditolak: NIP Anda tidak terdaftar sebagai staf Setda.");
+      return;
+    }
+
+    const staffDivision = foundStaff.division || "Umum";
+    if (staffDivision !== "Umum") {
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
+      const divisionDisplay = staffDivision === "Protokol" ? "Bagian Protokol & Komunikasi Pimpinan" : `Bagian ${staffDivision}`;
+      setLoginError(`Akses Ditolak: NIP Anda terdaftar di ${divisionDisplay}. Sistem DMS ini hanya diperuntukkan bagi Staf Bagian Umum.`);
+      return;
+    }
+
+    setCurrentUser({
+      name: foundStaff.name,
+      email: foundStaff.email,
+      nip: loginNip,
+      role: foundStaff.role || "Staff Bagian Umum",
+      department: "Bagian Umum Setda"
+    });
 
     setIsLoggedIn(true);
     setCurrentView("dashboard");
     loadSharedDocuments();
-    showToastMsg(`Selamat datang kembali, ${formattedName}!`, "success");
+    showToastMsg(`Selamat datang kembali, ${foundStaff.name}!`, "success");
   };
 
   const handleLogout = () => {
@@ -397,21 +423,23 @@ export default function Home() {
 
           <form className="login-form" onSubmit={handleLogin}>
             <div className="form-group">
-              <label>Username / Email Resmi Staf</label>
+              <label>NIP (Nomor Induk Pegawai)</label>
               <div className="input-with-icon">
-                <Users size={18} />
+                <FileText size={18} />
                 <input
                   type="text"
-                  value={loginUsername}
+                  value={loginNip}
                   onChange={(e) => {
-                    setLoginUsername(e.target.value);
+                    setLoginNip(e.target.value);
                     setLoginError("");
                   }}
-                  placeholder="budi.santoso@setda.gov.id"
+                  placeholder="Contoh: 19850712 201001 1 008"
+                  maxLength={22}
                   required
                 />
               </div>
             </div>
+
             <div className="form-group">
               <label>Password</label>
               <div className="input-with-icon">
@@ -428,6 +456,15 @@ export default function Home() {
               Masuk ke System DMS Bagian Umum <ArrowRight size={16} />
             </button>
           </form>
+
+          <div className="login-demo-helper" style={{ marginTop: "20px", padding: "12px", background: "var(--primary-light)", border: "1px solid var(--primary-border)", borderRadius: "var(--radius-md)", fontSize: "11.5px", textAlign: "left", color: "var(--text-main)" }}>
+            <div style={{ fontWeight: 700, color: "var(--primary)", marginBottom: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+              ℹ️ Info Uji Coba Login NIP
+            </div>
+            <div><strong>Staf Bagian Umum:</strong> 19850712 201001 1 008</div>
+            <div><strong>Staf Bagian Lain (Protokol):</strong> 19910324 201503 2 002</div>
+            <div style={{ marginTop: "4px", fontSize: "10.5px", color: "var(--text-muted)" }}>* Sistem akan mendeteksi Bagian/Unit Kerja secara otomatis berdasarkan NIP. Hanya Staf Bagian Umum yang diberikan izin masuk.</div>
+          </div>
         </div>
       </div>
     );
@@ -1069,7 +1106,12 @@ export default function Home() {
                               </div>
                               <div>
                                 <div style={{ fontWeight: 700 }}>{s.name}</div>
-                                <div style={{ fontSize: "11.5px", color: "var(--text-muted)" }}>{s.email}</div>
+                                <div style={{ fontSize: "11.5px", color: "var(--text-muted)" }}>
+                                  {s.email} {s.nip ? `• NIP: ${s.nip}` : ""}
+                                </div>
+                                <div style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 600 }}>
+                                  Bagian: {s.division || "Umum"}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -1544,16 +1586,18 @@ export default function Home() {
               <button className="icon-btn" onClick={() => setShowAddStaffModal(false)}><X size={18} /></button>
             </div>
 
-            <form onSubmit={async (e) => {
+             <form onSubmit={async (e) => {
               e.preventDefault();
               const name = (e.target as any).staffName.value;
               const email = (e.target as any).staffEmail.value;
               const role = (e.target as any).staffRole.value;
+              const nip = (e.target as any).staffNip.value;
+              const division = (e.target as any).staffDivision.value;
               try {
                 const res = await fetch("/api/staff", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ name, email, role })
+                  body: JSON.stringify({ name, email, role, nip, division })
                 });
                 if (res.ok) {
                   const newStaff = await res.json();
@@ -1580,6 +1624,24 @@ export default function Home() {
                     <Inbox size={16} />
                     <input type="email" name="staffEmail" className="form-control" placeholder="ahmad.fauzi@setda.gov.id" required style={{ fontSize: "13px" }} />
                   </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--text-main)", marginBottom: "6px", display: "block" }}>NIP (Nomor Induk Pegawai) *</label>
+                  <div className="input-with-icon">
+                    <FileText size={16} />
+                    <input type="text" name="staffNip" className="form-control" placeholder="Contoh: 19900815 201402 1 005" required style={{ fontSize: "13px" }} />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--text-main)", marginBottom: "6px", display: "block" }}>Bagian / Unit Kerja</label>
+                  <select name="staffDivision" className="form-control" style={{ fontSize: "13px" }}>
+                    <option value="Umum">Bagian Umum Setda</option>
+                    <option value="Hukum">Bagian Hukum Setda</option>
+                    <option value="Protokol">Bagian Protokol & Komunikasi Pimpinan</option>
+                    <option value="Organisasi">Bagian Organisasi Setda</option>
+                  </select>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: "16px" }}>

@@ -11,7 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
       name: 'Budi Santoso',
       email: 'budi.s@setda.gov.id',
       role: 'Admin',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+      nip: '19850712 201001 1 008',
+      division: 'Umum'
     },
     documents: [],
     categories: [
@@ -22,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
       { id: 5, title: 'MoU & Perjanjian', desc: 'Nota kesepahaman dan perjanjian kerja sama.', docs: 0, updated: 'Baru saja', status: 'active' }
     ],
     staff: [
-      { id: 1, name: 'Budi Santoso', email: 'budi.s@setda.gov.id', role: 'Admin', status: 'Active', lastActive: 'Just now', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80' }
+      { id: 1, name: 'Budi Santoso', email: 'budi.s@setda.gov.id', role: 'Admin', status: 'Active', lastActive: 'Just now', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80', nip: '19850712 201001 1 008', division: 'Umum' }
     ]
   };
 
@@ -52,14 +54,110 @@ document.addEventListener('DOMContentLoaded', () => {
     if (viewName === 'management') renderStaffTable();
   }
 
+  // Update Profile UI dynamically
+  function updateProfileUI() {
+    const profileNameDisp = document.getElementById('user-profile-name-display');
+    const dropdownName = document.getElementById('user-dropdown-name');
+    const dropdownEmail = document.getElementById('user-dropdown-email');
+    const dropdownRole = document.getElementById('user-dropdown-role');
+
+    if (profileNameDisp) profileNameDisp.textContent = state.user.name;
+    if (dropdownName) dropdownName.textContent = state.user.name;
+    if (dropdownEmail) dropdownEmail.textContent = state.user.email;
+    if (dropdownRole) dropdownRole.textContent = `${state.user.role} Setda Bagian ${state.user.division}`;
+  }
+
+  // Clear error banner on input change
+  const loginNipInput = document.getElementById('login-nip');
+  const loginErrorContainer = document.getElementById('login-error-container');
+  const loginErrorText = document.getElementById('login-error-text');
+
+  if (loginNipInput) {
+    loginNipInput.addEventListener('input', () => {
+      if (loginErrorContainer) loginErrorContainer.style.display = 'none';
+    });
+  }
+
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      
+      const nipVal = loginNipInput ? loginNipInput.value : '';
+      const cleanNip = nipVal.replace(/\D/g, '');
+      const loginCard = document.querySelector('.login-card');
+
+      // 1. Validate NIP length
+      if (cleanNip.length !== 18) {
+        if (loginErrorContainer && loginErrorText) {
+          loginErrorContainer.style.display = 'block';
+          loginErrorText.textContent = 'Format NIP salah. NIP harus terdiri dari 18 digit angka.';
+        }
+        if (loginCard) {
+          loginCard.classList.add('shake-error');
+          setTimeout(() => loginCard.classList.remove('shake-error'), 500);
+        }
+        return;
+      }
+
+      // 2. Validate Division based on NIP
+      // Allowed NIPs (Staf Bagian Umum)
+      const allowedStaffMap = {
+        '198507122010011008': { name: 'Budi Santoso', email: 'budi.s@setda.gov.id', role: 'Admin', division: 'Umum' },
+        '199008152014021005': { name: 'Ahmad Fauzi', email: 'ahmad.f@setda.gov.id', role: 'Staff', division: 'Umum' },
+        '199512102019012001': { name: 'Siti Nurhaliza', email: 'siti.n@setda.gov.id', role: 'Viewer', division: 'Umum' }
+      };
+
+      // Denied NIPs (Staf Bagian Lain)
+      const deniedStaffMap = {
+        '199103242015032002': { name: 'Hendra Wijaya', division: 'Protokol & Komunikasi Pimpinan' }
+      };
+
+      if (cleanNip in deniedStaffMap) {
+        if (loginErrorContainer && loginErrorText) {
+          loginErrorContainer.style.display = 'block';
+          const staffDetail = deniedStaffMap[cleanNip];
+          loginErrorText.textContent = `Akses Ditolak: NIP Anda terdaftar di ${staffDetail.division}. Sistem ini khusus untuk Staf Bagian Umum.`;
+        }
+        if (loginCard) {
+          loginCard.classList.add('shake-error');
+          setTimeout(() => loginCard.classList.remove('shake-error'), 500);
+        }
+        return;
+      }
+
+      if (!(cleanNip in allowedStaffMap)) {
+        if (loginErrorContainer && loginErrorText) {
+          loginErrorContainer.style.display = 'block';
+          loginErrorText.textContent = 'Akses Ditolak: NIP Anda tidak terdaftar sebagai Staf Bagian Umum Setda.';
+        }
+        if (loginCard) {
+          loginCard.classList.add('shake-error');
+          setTimeout(() => loginCard.classList.remove('shake-error'), 500);
+        }
+        return;
+      }
+
+      // Successful login
+      if (loginErrorContainer) loginErrorContainer.style.display = 'none';
+
+      const matchedStaff = allowedStaffMap[cleanNip];
+
+      state.user = {
+        name: matchedStaff.name,
+        email: matchedStaff.email,
+        role: matchedStaff.role,
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+        nip: nipVal,
+        division: matchedStaff.division
+      };
+
+      updateProfileUI();
+
       if (loginView) loginView.style.display = 'none';
       if (appView) appView.style.display = 'flex';
       switchView('dashboard');
-      showToast('Selamat datang kembali, Budi Santoso!', 'success');
+      showToast(`Selamat datang kembali, ${state.user.name}!`, 'success');
     });
   }
 
@@ -278,4 +376,5 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAllDocumentsTable();
   renderCategoriesGrid();
   renderStaffTable();
+  updateProfileUI();
 });
