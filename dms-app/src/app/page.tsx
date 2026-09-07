@@ -1357,11 +1357,30 @@ export default function Home() {
               </div>
 
               <div className="upload-grid">
-                <div className="dropzone-box" onClick={() => document.getElementById("hidden-file-input")?.click()}>
+                <label
+                  htmlFor="hidden-file-input"
+                  className="dropzone-box"
+                  style={{
+                    cursor: "pointer",
+                    position: "relative",
+                    display: "block",
+                    touchAction: "manipulation"
+                  }}
+                >
                   <input
                     type="file"
                     id="hidden-file-input"
-                    style={{ display: "none" }}
+                    accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.txt,.png,.jpg,.jpeg,.webp,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      opacity: 0,
+                      cursor: "pointer",
+                      zIndex: 10
+                    }}
                     onChange={(e) => {
                       if (e.target.files?.length) {
                         setSelectedFile(e.target.files[0]);
@@ -1370,16 +1389,54 @@ export default function Home() {
                     }}
                   />
                   <div className="dropzone-icon"><UploadCloud size={28} /></div>
-                  <h3 className="dropzone-title">Pilih atau Seret Berkas Asli</h3>
-                  <p className="dropzone-subtitle">Klik di sini untuk memilih file dari komputer Anda</p>
-                  <div className="file-tags"><span className="file-tag">PDF</span><span className="file-tag">DOCX</span><span className="file-tag">XLSX</span></div>
-                  {selectedFile && (
-                    <div style={{ marginTop: "16px", padding: "10px 16px", background: "var(--bg-card)", border: "1px solid var(--primary-border)", borderRadius: "var(--radius-md)", textAlign: "left", width: "100%" }}>
-                      <div style={{ fontWeight: 700, color: "var(--primary)" }}>{selectedFile.name}</div>
-                      <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</div>
+                  <h3 className="dropzone-title">Pilih Berkas dari HP / Komputer</h3>
+                  <p className="dropzone-subtitle">Ketuk di sini untuk memilih file dokumen atau foto</p>
+                  <div className="file-tags">
+                    <span className="file-tag">PDF</span>
+                    <span className="file-tag">DOCX</span>
+                    <span className="file-tag">XLSX</span>
+                    <span className="file-tag">GAMBAR</span>
+                  </div>
+                  {selectedFile ? (
+                    <div style={{ marginTop: "16px", padding: "12px 16px", background: "var(--bg-card)", border: "2px solid var(--primary)", borderRadius: "var(--radius-md)", textAlign: "left", width: "100%", position: "relative", zIndex: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, color: "var(--primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <CheckCircle2 size={16} style={{ flexShrink: 0 }} /> <span>{selectedFile.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedFile(null);
+                          }}
+                          style={{
+                            background: "#fee2e2",
+                            border: "none",
+                            color: "#dc2626",
+                            borderRadius: "6px",
+                            padding: "4px 8px",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            flexShrink: 0
+                          }}
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
+                        {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Berkas Siap Diunggah (Ketuk untuk ganti)
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: "14px" }}>
+                      <span className="btn-secondary" style={{ display: "inline-flex", alignItems: "center", gap: "6px", pointerEvents: "none", fontSize: "12.5px", padding: "8px 16px", fontWeight: 600 }}>
+                        📁 Buka File Manager / Foto HP
+                      </span>
                     </div>
                   )}
-                </div>
+                </label>
 
                 <div className="card" style={{ padding: "28px" }}>
                   <form onSubmit={handleUploadSubmit}>
@@ -1461,10 +1518,10 @@ export default function Home() {
                       <label>Keywords / Tags</label>
                       <input type="text" className="form-control" placeholder="e.g. anggaran, 2024, rahasia" value={uploadTags} onChange={(e) => setUploadTags(e.target.value)} />
                     </div>
-                    <div className="form-actions">
-                      <button type="button" className="btn-secondary" onClick={() => setCurrentView("all-documents")}>Cancel</button>
-                      <button type="submit" className="btn-primary-block" disabled={isUploading} style={{ width: "auto", padding: "10px 24px", margin: 0, background: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}>
-                        <UploadCloud size={16} /> {isUploading ? "Mengunggah..." : "Simpan Berkas ke Server"}
+                    <div className="form-actions" style={{ display: "flex", gap: "12px", marginTop: "24px", flexWrap: "wrap" }}>
+                      <button type="button" className="btn-secondary" onClick={() => setCurrentView("all-documents")} style={{ flex: "1", minHeight: "44px" }}>Cancel</button>
+                      <button type="submit" className="btn-primary-block" disabled={isUploading} style={{ flex: "2", minWidth: "180px", minHeight: "44px", padding: "12px 24px", margin: 0, background: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                        <UploadCloud size={18} /> {isUploading ? "Mengunggah..." : "Simpan Berkas ke Server"}
                       </button>
                     </div>
                   </form>

@@ -513,7 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCancelUpload = document.getElementById('btn-cancel-upload');
 
   if (dropzone && fileInputHidden) {
-    dropzone.addEventListener('click', () => fileInputHidden.click());
     dropzone.addEventListener('dragover', (e) => {
       e.preventDefault();
       dropzone.style.borderColor = 'var(--primary)';
@@ -537,9 +536,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleFileSelect(file) {
     state.selectedUploadFile = file;
+    const titleInput = document.getElementById('upload-doc-title');
+    if (titleInput && !titleInput.value) {
+      titleInput.value = file.name;
+    }
     if (dropzonePreview && selectedFileName && selectedFileSize) {
-      selectedFileName.textContent = file.name;
-      selectedFileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+      selectedFileName.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 6px;">✓ ${file.name}</span>`;
+      selectedFileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB • Berkas Terpilih';
       dropzonePreview.style.display = 'block';
     }
   }

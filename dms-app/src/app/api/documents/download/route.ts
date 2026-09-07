@@ -123,6 +123,30 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // 3. If Base64 Data URI
+    if (targetDoc.fileUrl && targetDoc.fileUrl.startsWith("data:")) {
+      try {
+        const parts = targetDoc.fileUrl.split(",");
+        if (parts.length === 2) {
+          const base64Data = parts[1];
+          const mimeMatch = parts[0].match(/:(.*?);/);
+          const resolvedMime = mimeMatch ? mimeMatch[1] : mimeType;
+          const fileBuffer = Buffer.from(base64Data, "base64");
+          return new Response(fileBuffer, {
+            status: 200,
+            headers: {
+              "Content-Type": resolvedMime,
+              "Content-Disposition": `attachment; filename="${safeFileName}"; filename*=UTF-8''${encodeURIComponent(safeFileName)}`,
+              "Content-Length": fileBuffer.length.toString(),
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
+          });
+        }
+      } catch (dataErr) {
+        console.error("Data URI download error:", dataErr);
+      }
+    }
+
     // 3. Fallback: Generate official structured document file
     const docText = `================================================================================
 BAGIAN UMUM SEKRETARIAT DAERAH KABUPATEN GUNUNGKIDUL
