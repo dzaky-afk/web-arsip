@@ -2363,15 +2363,16 @@ body.dark-mode .mobile-bottom-nav {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 1000;
+  z-index: 99999 !important;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
   animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  touch-action: manipulation;
 }
 
 @keyframes modalFadeIn {

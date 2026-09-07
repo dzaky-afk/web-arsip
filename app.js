@@ -615,6 +615,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const doc = state.documents.find(d => d.id === id);
     if (!doc) return;
 
+    state.activeViewDocId = id;
+
     const modalTitle = document.getElementById('modal-doc-title');
     const modalBadge = document.getElementById('modal-doc-category-badge');
     const modalUploader = document.getElementById('modal-doc-uploader');
@@ -631,6 +633,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     openModal('modal-doc-viewer');
   };
+
+  const btnViewerDeleteDoc = document.getElementById('btn-viewer-delete-doc');
+  if (btnViewerDeleteDoc) {
+    btnViewerDeleteDoc.addEventListener('click', () => {
+      if (state.activeViewDocId) {
+        const idToDelete = state.activeViewDocId;
+        closeModal(document.getElementById('modal-doc-viewer'));
+        window.deleteDocument(idToDelete);
+      }
+    });
+  }
 
   // Render Functions
   function renderDashboardTable() {
@@ -785,13 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
-  window.deleteDocument = function(id) {
-    state.documents = state.documents.filter(doc => doc.id !== id);
-    renderDashboardTable();
-    renderAllDocumentsTable();
-    renderCategoriesGrid();
-    showToast('Dokumen berhasil dihapus.');
-  };
+
 
   window.toggleStaffStatus = function(id) {
     state.staff = state.staff.map(s => {

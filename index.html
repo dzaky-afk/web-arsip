@@ -1099,11 +1099,16 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-secondary modal-close-btn">Tutup</button>
-        <button type="button" class="btn-primary-block"
-          style="width: auto; padding: 8px 18px; margin: 0; background: var(--primary);"
-          onclick="alert('Mengunduh dokumen...')">Unduh Dokumen</button>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <button type="button" class="btn-secondary" id="btn-viewer-delete-doc" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.08); font-weight: 600; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          Hapus Dokumen
+        </button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn-secondary modal-close-btn">Tutup</button>
+          <button type="button" class="btn-primary-block" id="btn-viewer-download-doc"
+            style="width: auto; padding: 8px 18px; margin: 0; background: var(--primary);">Unduh Dokumen</button>
+        </div>
       </div>
     </div>
   </div>

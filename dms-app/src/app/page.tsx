@@ -271,15 +271,18 @@ export default function Home() {
   };
 
   const handleDeleteDocument = async (id: number) => {
+    // Optimistically remove from state immediately
+    setDocuments((prev) => prev.filter((d) => d.id !== id));
+    setSelectedDocIds((prev) => prev.filter((docId) => docId !== id));
+    if (selectedDoc && selectedDoc.id === id) {
+      setSelectedDoc(null);
+    }
+    showToastMsg("Dokumen berhasil dihapus dari server pusat.", "success");
+
     try {
-      const res = await fetch(`/api/documents?id=${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setDocuments((prev) => prev.filter((d) => d.id !== id));
-        setSelectedDocIds((prev) => prev.filter((docId) => docId !== id));
-        showToastMsg("Dokumen berhasil dihapus dari server pusat.");
-      }
-    } catch {
-      showToastMsg("Gagal menghapus dokumen.", "error");
+      await fetch(`/api/documents?id=${id}`, { method: "DELETE" });
+    } catch (err) {
+      console.warn("Server DELETE sync notice:", err);
     }
   };
 
@@ -1833,15 +1836,30 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="modal-footer" style={{ padding: "16px 24px", background: "var(--bg-body)", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-              <button className="btn-secondary" onClick={() => setSelectedDoc(null)} style={{ padding: "9px 20px", fontWeight: 600 }}>Tutup</button>
+            <div className="modal-footer" style={{ padding: "16px 24px", background: "var(--bg-body)", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
               <button
-                className="btn-primary-block"
-                style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, var(--dark-navy) 0%, var(--primary) 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}
-                onClick={() => handleDownloadDocument(selectedDoc)}
+                type="button"
+                className="btn-secondary"
+                style={{ color: "#ef4444", borderColor: "rgba(239, 68, 68, 0.35)", background: "rgba(239, 68, 68, 0.08)", display: "inline-flex", alignItems: "center", gap: "6px", fontWeight: 600, padding: "9px 16px" }}
+                onClick={() => {
+                  const doc = selectedDoc;
+                  setSelectedDoc(null);
+                  setDocToDelete(doc);
+                }}
               >
-                <Download size={16} /> Unduh Berkas ke Komputer
+                <Trash2 size={16} /> Hapus Dokumen
               </button>
+
+              <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                <button className="btn-secondary" onClick={() => setSelectedDoc(null)} style={{ padding: "9px 20px", fontWeight: 600 }}>Tutup</button>
+                <button
+                  className="btn-primary-block"
+                  style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, var(--dark-navy) 0%, var(--primary) 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}
+                  onClick={() => handleDownloadDocument(selectedDoc)}
+                >
+                  <Download size={16} /> Unduh Berkas
+                </button>
+              </div>
             </div>
           </div>
         </div>

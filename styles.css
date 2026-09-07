@@ -2068,3 +2068,272 @@ body.dark-mode .mobile-bottom-nav {
     width: 100% !important;
   }
 }
+
+/* =========================================
+   PREMIUM DELETE CONFIRMATION MODAL
+   ========================================= */
+.delete-confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99999 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  touch-action: manipulation;
+}
+
+.delete-confirm-modal-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-radius: 24px;
+  max-width: 460px;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.35), 0 0 45px -10px rgba(239, 68, 68, 0.18);
+  position: relative;
+  animation: modalZoomIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.delete-modal-backdrop-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 160px;
+  background: radial-gradient(circle at 50% -20%, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.05) 60%, transparent 100%);
+  pointer-events: none;
+}
+
+.delete-modal-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px 20px 0 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.delete-modal-close-btn {
+  background: var(--border-light);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+}
+
+.delete-modal-close-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.35);
+  transform: rotate(90deg);
+}
+
+.delete-modal-header-centered {
+  text-align: center;
+  padding: 0 28px 4px 28px;
+  position: relative;
+  z-index: 2;
+}
+
+.delete-icon-outer-ring {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
+.delete-icon-inner-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px -2px rgba(239, 68, 68, 0.45);
+}
+
+.delete-modal-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+  margin-bottom: 6px;
+}
+
+.delete-modal-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.delete-modal-body-custom {
+  padding: 0 28px 28px 28px;
+  position: relative;
+  z-index: 2;
+}
+
+.delete-file-preview-card {
+  background: var(--bg-body);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: border-color 0.2s ease;
+}
+
+.delete-file-preview-card:hover {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.delete-file-pill-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.delete-file-name-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.delete-file-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.delete-meta-tag {
+  background: var(--border-light);
+  border: 1px solid var(--border-color);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 11px;
+}
+
+.delete-warning-banner {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-left: 4px solid #ef4444;
+  border-radius: 12px;
+  padding: 11px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #dc2626;
+  margin-bottom: 24px;
+}
+
+body.dark-mode .delete-warning-banner {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  border-left-color: #ef4444;
+}
+
+.delete-modal-footer-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.delete-btn-cancel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 11px 18px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  touch-action: manipulation;
+}
+
+.delete-btn-cancel:hover {
+  background: var(--border-light);
+  border-color: var(--text-muted);
+  transform: translateY(-1px);
+}
+
+.delete-btn-confirm {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  color: #ffffff;
+  padding: 11px 18px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 6px 18px -2px rgba(239, 68, 68, 0.45);
+  min-height: 46px;
+  touch-action: manipulation;
+}
+
+.delete-btn-confirm:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  box-shadow: 0 8px 24px -2px rgba(239, 68, 68, 0.6);
+  transform: translateY(-1px);
+}
+
+.delete-btn-confirm:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px -2px rgba(239, 68, 68, 0.4);
+}
