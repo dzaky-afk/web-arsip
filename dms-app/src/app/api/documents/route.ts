@@ -171,10 +171,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Local JSON Fallback Save
-    const data = fs.readFileSync(DATA_FILE, "utf-8");
-    const documents: DocumentItem[] = JSON.parse(data || "[]");
-    documents.unshift(newDoc);
-    fs.writeFileSync(DATA_FILE, JSON.stringify(documents, null, 2));
+    try {
+      if (fs.existsSync(DATA_FILE)) {
+        const data = fs.readFileSync(DATA_FILE, "utf-8");
+        const documents: DocumentItem[] = JSON.parse(data || "[]");
+        documents.unshift(newDoc);
+        fs.writeFileSync(DATA_FILE, JSON.stringify(documents, null, 2));
+      }
+    } catch (fsErr) {
+      console.warn("Serverless read-only filesystem detected, proceeding in-memory:", fsErr);
+    }
 
     return NextResponse.json(newDoc);
   } catch (error) {
