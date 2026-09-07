@@ -705,6 +705,14 @@ export default function Home() {
             <h2>Setda Gunungkidul</h2>
             <p>DMS Bagian Umum</p>
           </div>
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            title="Tutup Menu"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         <nav className="sidebar-nav">
@@ -1605,6 +1613,57 @@ export default function Home() {
           )}
         </main>
       </div>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <nav className="mobile-bottom-nav">
+        <button
+          type="button"
+          className={`bottom-nav-item ${currentView === "dashboard" ? "active" : ""}`}
+          onClick={() => { setCurrentView("dashboard"); setIsMobileSidebarOpen(false); }}
+          title="Beranda"
+        >
+          <LayoutGrid size={20} />
+          <span>Beranda</span>
+        </button>
+        <button
+          type="button"
+          className={`bottom-nav-item ${currentView === "all-documents" ? "active" : ""}`}
+          onClick={() => { setCurrentView("all-documents"); setIsMobileSidebarOpen(false); }}
+          title="Dokumen"
+        >
+          <FileText size={20} />
+          <span>Dokumen</span>
+        </button>
+        <button
+          type="button"
+          className={`bottom-nav-item ${currentView === "uploads" ? "active" : ""}`}
+          onClick={() => { setCurrentView("uploads"); setIsMobileSidebarOpen(false); }}
+          title="Upload"
+        >
+          <div className="bottom-nav-upload-icon">
+            <Plus size={18} />
+          </div>
+          <span>Upload</span>
+        </button>
+        <button
+          type="button"
+          className={`bottom-nav-item ${currentView === "categories" ? "active" : ""}`}
+          onClick={() => { setCurrentView("categories"); setIsMobileSidebarOpen(false); }}
+          title="Kategori"
+        >
+          <Folder size={20} />
+          <span>Kategori</span>
+        </button>
+        <button
+          type="button"
+          className={`bottom-nav-item ${isMobileSidebarOpen ? "active" : ""}`}
+          onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          title="Menu"
+        >
+          <Menu size={20} />
+          <span>Menu</span>
+        </button>
+      </nav>
 
       {/* FLOATING BATCH ACTIONS BAR */}
       {selectedDocIds.length > 0 && (

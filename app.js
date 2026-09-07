@@ -37,6 +37,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginView = document.getElementById('login-view');
   const appView = document.getElementById('app-view');
 
+  function closeMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('mobile-open', 'open');
+    if (overlay) overlay.classList.remove('active');
+  }
+
+  function openMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.add('mobile-open');
+    if (overlay) overlay.classList.add('active');
+  }
+
   function switchView(viewName) {
     state.currentView = viewName;
     document.querySelectorAll('.page-view').forEach(view => {
@@ -53,6 +67,16 @@ document.addEventListener('DOMContentLoaded', () => {
         item.classList.remove('active');
       }
     });
+
+    document.querySelectorAll('.bottom-nav-item[data-view]').forEach(item => {
+      if (item.getAttribute('data-view') === viewName) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    closeMobileSidebar();
 
     if (viewName === 'dashboard') renderDashboardTable();
     if (viewName === 'all-documents') renderAllDocumentsTable();
@@ -240,6 +264,51 @@ document.addEventListener('DOMContentLoaded', () => {
       switchView(view);
     });
   });
+
+  // Mobile Bottom Nav items
+  document.querySelectorAll('.bottom-nav-item[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.getAttribute('data-view');
+      switchView(view);
+    });
+  });
+
+  // Mobile Drawer toggles
+  const btnMobileMenu = document.getElementById('btn-mobile-menu');
+  const btnCloseSidebar = document.getElementById('btn-close-sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  const btnBottomMenu = document.getElementById('btn-bottom-menu');
+
+  if (btnMobileMenu) {
+    btnMobileMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openMobileSidebar();
+    });
+  }
+
+  if (btnBottomMenu) {
+    btnBottomMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar && (sidebar.classList.contains('mobile-open') || sidebar.classList.contains('open'))) {
+        closeMobileSidebar();
+      } else {
+        openMobileSidebar();
+      }
+    });
+  }
+
+  if (btnCloseSidebar) {
+    btnCloseSidebar.addEventListener('click', () => {
+      closeMobileSidebar();
+    });
+  }
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', () => {
+      closeMobileSidebar();
+    });
+  }
 
   document.querySelectorAll('.nav-trigger[data-view]').forEach(trig => {
     trig.addEventListener('click', (e) => {
