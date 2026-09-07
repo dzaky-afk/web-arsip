@@ -11,6 +11,10 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Setda Bagian Umum - Sistem Manajemen Dokumen (DMS)",
   description: "Sistem Manajemen Dokumen Admin Panel - Setda Bagian Umum. Mengelola, mengorganisasi, dan mengamankan dokumen resmi daerah.",
+  icons: {
+    icon: "/logo-gunungkidul.png",
+    apple: "/logo-gunungkidul.png",
+  },
 };
 
 export default function RootLayout({
