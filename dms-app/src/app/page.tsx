@@ -7,7 +7,6 @@ import {
   Folder,
   UploadCloud,
   Users,
-  Settings,
   HelpCircle,
   Search,
   Bell,
@@ -28,23 +27,25 @@ import {
   X,
   Inbox,
   ExternalLink,
-  Share2,
   User,
   LogOut,
-  Key,
   ShieldCheck,
   ChevronDown,
   Menu,
   Database,
-  HardDrive,
-  Shield,
-  FileSpreadsheet,
   LifeBuoy,
   Phone,
   Mail,
-  BookOpen,
-  ChevronUp
+  ChevronUp,
+  Calendar,
+  CalendarDays,
+  Clock,
+  Filter,
+  AlertCircle
 } from "lucide-react";
+import type { DocumentItem } from "@/app/api/documents/route";
+import type { CategoryItem } from "@/app/api/categories/route";
+import type { StaffItem } from "@/app/api/staff/route";
 
 // Default System Document Categories
 const DEFAULT_CATEGORIES = [
@@ -84,24 +85,29 @@ export default function Home() {
   });
   
   // Real Shared Server State (Google Drive Style Shared Documents)
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>(DEFAULT_CATEGORIES);
-  const [staff, setStaff] = useState<any[]>(CURRENT_USER_STAFF);
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
+  const [staff, setStaff] = useState<StaffItem[]>(CURRENT_USER_STAFF);
 
   // Filter & Selection States
   const [searchQuery, setSearchQuery] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFilterPreset, setDateFilterPreset] = useState<"all" | "today" | "yesterday" | "7days" | "30days" | "thisMonth" | "custom">("all");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
   const [selectedDocIds, setSelectedDocIds] = useState<number[]>([]);
 
   // Modal States
-  const [selectedDoc, setSelectedDoc] = useState<any>(null);
+  const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<DocumentItem | null>(null);
+  const [showBatchDeleteModal, setShowBatchDeleteModal] = useState(false);
+  const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   
   // Login Access Control States
   const [loginNip, setLoginNip] = useState("19850712 201001 1 008");
-  const [loginPassword, setLoginPassword] = useState("••••••••");
   const [loginError, setLoginError] = useState("");
   const [isShaking, setIsShaking] = useState(false);
 
@@ -116,6 +122,7 @@ export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
+  const [catError, setCatError] = useState(false);
 
   const showToastMsg = (message: string, type: string = "info") => {
     setToast({ message, type });
@@ -163,18 +170,29 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+    const savedTheme = localStorage.getItem("dms_theme");
+    if (savedTheme) {
+      setDarkMode(savedTheme === "dark");
+    } else if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setDarkMode(true);
+    }
     loadSharedDocuments();
     loadCategories();
     loadStaff();
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
     if (darkMode) {
+      document.documentElement.classList.add("dark-mode");
       document.body.classList.add("dark-mode");
+      localStorage.setItem("dms_theme", "dark");
     } else {
+      document.documentElement.classList.remove("dark-mode");
       document.body.classList.remove("dark-mode");
+      localStorage.setItem("dms_theme", "light");
     }
-  }, [darkMode]);
+  }, [darkMode, mounted]);
 
   const getCategoryDocCount = (catTitle: string) => {
     return documents.filter((d) => d.category === catTitle).length;
@@ -197,8 +215,17 @@ export default function Home() {
 
     // 2. Validate Division based on NIP lookup in staff list
     // Fallback if staff list API is not loaded yet
-    const localAllowedStaff: {[key: string]: any} = {
-      "198507122010011008": { name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin Setda Bagian Umum", division: "Umum" }
+    const localAllowedStaff: Record<string, StaffItem> = {
+      "198507122010011008": {
+        id: 1,
+        name: "Budi Santoso",
+        email: "budi.s@setda.gov.id",
+        role: "Admin Setda Bagian Umum",
+        status: "Active",
+        lastActive: "Just now",
+        nip: "19850712 201001 1 008",
+        division: "Umum"
+      }
     };
 
     let foundStaff = staff.find((s) => s.nip && s.nip.replace(/\D/g, "") === cleanNip);
@@ -251,7 +278,7 @@ export default function Home() {
         setSelectedDocIds((prev) => prev.filter((docId) => docId !== id));
         showToastMsg("Dokumen berhasil dihapus dari server pusat.");
       }
-    } catch (e) {
+    } catch {
       showToastMsg("Gagal menghapus dokumen.", "error");
     }
   };
@@ -271,7 +298,7 @@ export default function Home() {
         );
         showToastMsg("Status akun staf berhasil diperbarui di server.");
       }
-    } catch (e) {
+    } catch {
       showToastMsg("Gagal memperbarui status staf.", "error");
     }
   };
@@ -324,16 +351,28 @@ export default function Home() {
   // Upload file & save metadata to Next.js Server API
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadTitle) return;
 
+    if (!uploadTitle.trim()) {
+      showToastMsg("Peringatan: Silakan masukkan judul dokumen terlebih dahulu!", "warning");
+      return;
+    }
+
+    if (!uploadCategory || !uploadCategory.trim()) {
+      setCatError(true);
+      setIsCatDropdownOpen(true);
+      showToastMsg("Peringatan: Anda belum memilih kategori dokumen! Silakan pilih kategori terlebih dahulu.", "warning");
+      return;
+    }
+
+    setCatError(false);
     setIsUploading(true);
     showToastMsg("Mengirim berkas ke server pusat...", "info");
 
     try {
       const formData = new FormData();
-      formData.append("title", uploadTitle);
-      formData.append("category", uploadCategory || "Surat Keputusan");
-      formData.append("uploader", "Budi Santoso");
+      formData.append("title", uploadTitle.trim());
+      formData.append("category", uploadCategory.trim());
+      formData.append("uploader", currentUser.name || "Staf Bagian Umum");
       formData.append("desc", uploadDesc);
       formData.append("tags", uploadTags);
 
@@ -355,14 +394,95 @@ export default function Home() {
         setUploadDesc("");
         setUploadTags("");
         setSelectedFile(null);
+        setCatError(false);
         setCurrentView("all-documents");
       } else {
         showToastMsg("Gagal mengunggah berkas ke server.", "error");
       }
-    } catch (err) {
+    } catch {
       showToastMsg("Terjadi kesalahan koneksi server.", "error");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDownloadDocument = (doc: DocumentItem) => {
+    showToastMsg(`Mengunduh berkas "${doc.name}" ke komputer...`, "info");
+    try {
+      const downloadEndpoint = `/api/documents/download?id=${doc.id}&t=${Date.now()}`;
+      
+      const link = document.createElement("a");
+      link.href = downloadEndpoint;
+      link.setAttribute("download", doc.name);
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+      }, 3000);
+      
+      showToastMsg(`Berkas "${doc.name}" berhasil diunduh ke folder Downloads!`, "success");
+    } catch (err) {
+      console.error("Gagal mengunduh berkas", err);
+      showToastMsg("Gagal mengunduh berkas.", "error");
+    }
+  };
+
+  const handleBatchDownload = async () => {
+    const selectedDocs = documents.filter((d) => selectedDocIds.includes(d.id));
+    if (selectedDocs.length === 0) {
+      showToastMsg("Silakan pilih setidaknya satu dokumen untuk diunduh.", "warning");
+      return;
+    }
+
+    setIsBatchDownloading(true);
+    showToastMsg(`Memulai pengunduhan ${selectedDocs.length} berkas secara berurutan...`, "info");
+
+    let successCount = 0;
+
+    for (let i = 0; i < selectedDocs.length; i++) {
+      const doc = selectedDocs[i];
+      showToastMsg(`Mengunduh (${i + 1}/${selectedDocs.length}): "${doc.name}"...`, "info");
+
+      try {
+        const res = await fetch(`/api/documents/download?id=${doc.id}&t=${Date.now()}`);
+        if (res.ok) {
+          const blob = await res.blob();
+          const downloadUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = downloadUrl;
+          link.download = doc.name || `Dokumen_${doc.id}.pdf`;
+          link.style.display = "none";
+          document.body.appendChild(link);
+          link.click();
+
+          setTimeout(() => {
+            if (document.body.contains(link)) {
+              document.body.removeChild(link);
+            }
+            URL.revokeObjectURL(downloadUrl);
+          }, 4000);
+
+          successCount++;
+        }
+      } catch (err) {
+        console.error(`Gagal mengunduh berkas "${doc.name}":`, err);
+      }
+
+      // Jeda antar unduhan agar browser memproses setiap berkas asli secara terpisah
+      if (i < selectedDocs.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 600));
+      }
+    }
+
+    setIsBatchDownloading(false);
+    if (successCount > 0) {
+      showToastMsg(`Selesai! ${successCount} berkas berhasil diunduh langsung ke folder Downloads.`, "success");
+    } else {
+      showToastMsg("Gagal mengunduh berkas terpilih.", "error");
     }
   };
 
@@ -386,15 +506,109 @@ export default function Home() {
     showToastMsg("File CSV berhasil diunduh!", "success");
   };
 
+  // Helper to parse document date reliably
+  const getDocumentDateObj = (doc: DocumentItem): Date => {
+    if (doc.dateFull) {
+      const d = new Date(doc.dateFull);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (typeof doc.id === "number" && doc.id > 1000000000000) {
+      const d = new Date(doc.id);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  };
+
+  const isSameDay = (d1: Date, d2: Date) => {
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  };
+
   const filteredDocuments = documents.filter((doc) => {
+    // 1. Category Filter
     if (catFilter !== "all" && doc.category !== catFilter) return false;
+
+    // 2. Format / Type Filter
     if (typeFilter !== "all" && doc.type !== typeFilter) return false;
-    if (
-      searchQuery &&
-      !doc.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !doc.category.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-      return false;
+
+    // 3. Date Preset & Range Filter
+    if (dateFilterPreset !== "all") {
+      const docDate = getDocumentDateObj(doc);
+      const now = new Date();
+
+      if (dateFilterPreset === "today") {
+        if (!isSameDay(docDate, now)) return false;
+      } else if (dateFilterPreset === "yesterday") {
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        if (!isSameDay(docDate, yesterday)) return false;
+      } else if (dateFilterPreset === "7days") {
+        const sevenDaysAgo = new Date(now);
+        sevenDaysAgo.setDate(now.getDate() - 7);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+        if (docDate < sevenDaysAgo) return false;
+      } else if (dateFilterPreset === "30days") {
+        const thirtyDaysAgo = new Date(now);
+        thirtyDaysAgo.setDate(now.getDate() - 30);
+        thirtyDaysAgo.setHours(0, 0, 0, 0);
+        if (docDate < thirtyDaysAgo) return false;
+      } else if (dateFilterPreset === "thisMonth") {
+        if (docDate.getFullYear() !== now.getFullYear() || docDate.getMonth() !== now.getMonth()) {
+          return false;
+        }
+      } else if (dateFilterPreset === "custom") {
+        if (customStartDate) {
+          const start = new Date(customStartDate);
+          start.setHours(0, 0, 0, 0);
+          if (docDate < start) return false;
+        }
+        if (customEndDate) {
+          const end = new Date(customEndDate);
+          end.setHours(23, 59, 59, 999);
+          if (docDate > end) return false;
+        }
+      }
+    }
+
+    // 4. Smart Search Query (Matches filename, category, tags, desc, uploader, day name, date, month, year)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const docDate = getDocumentDateObj(doc);
+      
+      const dayNames = ["minggu", "senin", "selasa", "rabu", "kamis", "jumat", "sabtu"];
+      const monthNames = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+      const monthShort = ["jan", "feb", "mar", "apr", "mei", "jun", "jul", "agu", "sep", "okt", "nov", "des"];
+
+      const docDayName = dayNames[docDate.getDay()];
+      const docMonthName = monthNames[docDate.getMonth()];
+      const docMonthShort = monthShort[docDate.getMonth()];
+      const docYearStr = String(docDate.getFullYear());
+      const docDateNum = String(docDate.getDate());
+      const docDatePadded = docDateNum.padStart(2, "0");
+      const docIsoDate = `${docYearStr}-${String(docDate.getMonth() + 1).padStart(2, "0")}-${docDatePadded}`;
+
+      const matchesSearch =
+        doc.name.toLowerCase().includes(q) ||
+        doc.category.toLowerCase().includes(q) ||
+        (doc.uploader && doc.uploader.toLowerCase().includes(q)) ||
+        (doc.desc && doc.desc.toLowerCase().includes(q)) ||
+        (doc.tags && doc.tags.toLowerCase().includes(q)) ||
+        (doc.date && doc.date.toLowerCase().includes(q)) ||
+        docDayName.includes(q) ||
+        docMonthName.includes(q) ||
+        docMonthShort.includes(q) ||
+        docYearStr.includes(q) ||
+        docIsoDate.includes(q) ||
+        `${docDateNum} ${docMonthName} ${docYearStr}`.toLowerCase().includes(q) ||
+        `${docDateNum} ${docMonthShort} ${docYearStr}`.toLowerCase().includes(q) ||
+        `${docDayName}, ${docDateNum} ${docMonthShort} ${docYearStr}`.toLowerCase().includes(q);
+
+      if (!matchesSearch) return false;
+    }
+
     return true;
   });
 
@@ -403,6 +617,24 @@ export default function Home() {
   if (!isLoggedIn) {
     return (
       <div className="login-wrapper">
+        <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10 }}>
+          <button
+            type="button"
+            className="icon-btn"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-color)",
+              width: "42px",
+              height: "42px",
+              borderRadius: "50%",
+              boxShadow: "var(--shadow-md)"
+            }}
+            onClick={() => setDarkMode(!darkMode)}
+            title={darkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}
+          >
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </div>
         <div className="login-backdrop-decor"></div>
         <div className={`login-card ${isShaking ? "shake-error" : ""}`}>
           <div className="secure-badge">
@@ -435,19 +667,6 @@ export default function Home() {
                   }}
                   placeholder="Contoh: 19850712 201001 1 008"
                   maxLength={22}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Password</label>
-              <div className="input-with-icon">
-                <Lock size={18} />
-                <input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
                   required
                 />
               </div>
@@ -520,12 +739,6 @@ export default function Home() {
             <Users size={18} /> Management
           </div>
           <div
-            className={`nav-item ${currentView === "settings" ? "active" : ""}`}
-            onClick={() => { setCurrentView("settings"); setIsMobileSidebarOpen(false); }}
-          >
-            <Settings size={18} /> Settings
-          </div>
-          <div
             className={`nav-item ${currentView === "support" ? "active" : ""}`}
             onClick={() => { setCurrentView("support"); setIsMobileSidebarOpen(false); }}
           >
@@ -550,18 +763,40 @@ export default function Home() {
               <Search size={16} />
               <input
                 type="text"
-                placeholder="Search documents..."
+                placeholder="Cari berkas, hari (Senin/Jumat), tanggal (04 Sep 2026)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--text-muted)",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "2px"
+                  }}
+                  onClick={() => setSearchQuery("")}
+                  title="Hapus Pencarian"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
           </div>
 
           <div className="topbar-right">
             <button
               className="icon-btn"
-              onClick={() => setDarkMode(!darkMode)}
-              title="Toggle Dark/Light Mode"
+              onClick={() => {
+                const nextMode = !darkMode;
+                setDarkMode(nextMode);
+                showToastMsg(nextMode ? "Mode Gelap aktif" : "Mode Terang aktif", "info");
+              }}
+              title={darkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}
             >
               {darkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
@@ -606,6 +841,17 @@ export default function Home() {
               <div className="profile-dropdown-list">
                 <div className="profile-dropdown-item" onClick={() => { setShowProfileModal(true); setShowProfileMenu(false); }}>
                   <User size={16} /> Lihat & Edit Profil
+                </div>
+                <div
+                  className="profile-dropdown-item"
+                  onClick={() => {
+                    const nextMode = !darkMode;
+                    setDarkMode(nextMode);
+                    showToastMsg(nextMode ? "Mode Gelap aktif" : "Mode Terang aktif", "info");
+                  }}
+                >
+                  {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+                  <span>{darkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}</span>
                 </div>
                 <div className="profile-dropdown-item logout" onClick={handleLogout}>
                   <LogOut size={16} /> Keluar (Logout)
@@ -739,10 +985,13 @@ export default function Home() {
                               <td><span className="badge badge-category">{doc.category}</span></td>
                               <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{doc.date}</td>
                               <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
-                                <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Pratinjau / Unduh">
+                                <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Pratinjau Dokumen">
                                   <Eye size={16} />
                                 </button>
-                                <button className="icon-btn" onClick={() => handleDeleteDocument(doc.id)} title="Hapus">
+                                <button className="icon-btn" onClick={() => handleDownloadDocument(doc)} title="Unduh Berkas ke Komputer">
+                                  <Download size={16} />
+                                </button>
+                                <button className="icon-btn" onClick={() => setDocToDelete(doc)} title="Hapus Berkas">
                                   <Trash2 size={16} />
                                 </button>
                               </td>
@@ -895,6 +1144,110 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* SIMPLE & COMPACT DATE FILTER TOOLBAR */}
+              <div className="simple-date-toolbar">
+                <div className="simple-date-left">
+                  <Calendar size={15} style={{ color: "var(--primary)" }} />
+                  <span className="simple-date-title">Waktu:</span>
+                  <button
+                    type="button"
+                    className={`simple-date-btn ${dateFilterPreset === "all" && !customStartDate ? "active" : ""}`}
+                    onClick={() => {
+                      setDateFilterPreset("all");
+                      setCustomStartDate("");
+                      setCustomEndDate("");
+                    }}
+                  >
+                    Semua
+                  </button>
+                  <button
+                    type="button"
+                    className={`simple-date-btn ${dateFilterPreset === "today" ? "active" : ""}`}
+                    onClick={() => {
+                      setDateFilterPreset("today");
+                      setCustomStartDate("");
+                      setCustomEndDate("");
+                    }}
+                  >
+                    Hari Ini
+                  </button>
+                  <button
+                    type="button"
+                    className={`simple-date-btn ${dateFilterPreset === "thisMonth" ? "active" : ""}`}
+                    onClick={() => {
+                      setDateFilterPreset("thisMonth");
+                      setCustomStartDate("");
+                      setCustomEndDate("");
+                    }}
+                  >
+                    Bulan Ini
+                  </button>
+                </div>
+
+                <div className="simple-date-right">
+                  <span className="simple-date-picker-label">Pilih Tanggal:</span>
+                  <div className="simple-date-picker-wrap">
+                    <input
+                      type="date"
+                      className="simple-date-input"
+                      value={customStartDate}
+                      onChange={(e) => {
+                        setCustomStartDate(e.target.value);
+                        setCustomEndDate("");
+                        setDateFilterPreset(e.target.value ? "custom" : "all");
+                      }}
+                    />
+                    {customStartDate && (
+                      <button
+                        type="button"
+                        className="simple-date-clear"
+                        onClick={() => {
+                          setCustomStartDate("");
+                          setCustomEndDate("");
+                          setDateFilterPreset("all");
+                        }}
+                        title="Reset Tanggal"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ACTIVE FILTER SUMMARY BAR */}
+              {(dateFilterPreset !== "all" || searchQuery || catFilter !== "all" || typeFilter !== "all") && (
+                <div className="active-filter-banner">
+                  <div className="active-filter-text">
+                    <span>
+                      Ditemukan <strong>{filteredDocuments.length}</strong> dari <strong>{documents.length}</strong> dokumen
+                      {dateFilterPreset === "today" && " • Diunggah Hari Ini"}
+                      {dateFilterPreset === "yesterday" && " • Diunggah Kemarin"}
+                      {dateFilterPreset === "7days" && " • 7 Hari Terakhir"}
+                      {dateFilterPreset === "thisMonth" && " • Bulan Ini"}
+                      {dateFilterPreset === "custom" && customStartDate && ` • Tanggal ${customStartDate} ${customEndDate ? 's/d ' + customEndDate : ''}`}
+                      {catFilter !== "all" && ` • Kategori: ${catFilter}`}
+                      {typeFilter !== "all" && ` • Format: ${typeFilter.toUpperCase()}`}
+                      {searchQuery && ` • Kata Kunci: "${searchQuery}"`}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="active-filter-clear-btn"
+                    onClick={() => {
+                      setDateFilterPreset("all");
+                      setCustomStartDate("");
+                      setCustomEndDate("");
+                      setCatFilter("all");
+                      setTypeFilter("all");
+                      setSearchQuery("");
+                    }}
+                  >
+                    <RotateCcw size={12} /> Hapus Semua Filter
+                  </button>
+                </div>
+              )}
+
               <div className="card">
                 <div className="table-responsive">
                   {filteredDocuments.length > 0 ? (
@@ -934,8 +1287,9 @@ export default function Home() {
                             <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{doc.date}</td>
                             <td>{doc.uploader}</td>
                             <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
-                              <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Lihat / Unduh Berkas"><Eye size={16} /></button>
-                              <button className="icon-btn" onClick={() => handleDeleteDocument(doc.id)} title="Hapus Berkas"><Trash2 size={16} /></button>
+                              <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Lihat Pratinjau"><Eye size={16} /></button>
+                              <button className="icon-btn" onClick={() => handleDownloadDocument(doc)} title="Unduh Berkas ke Komputer"><Download size={16} /></button>
+                              <button className="icon-btn" onClick={() => setDocToDelete(doc)} title="Hapus Berkas"><Trash2 size={16} /></button>
                             </td>
                           </tr>
                         ))}
@@ -1004,12 +1358,15 @@ export default function Home() {
 
                       {/* CUSTOM DROPDOWN BUTTON WITH ARROW */}
                       <div
-                        className={`custom-cat-select-btn ${isCatDropdownOpen ? "open" : ""}`}
-                        onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
+                        className={`custom-cat-select-btn ${isCatDropdownOpen ? "open" : ""} ${catError && !uploadCategory ? "error" : ""}`}
+                        onClick={() => {
+                          setIsCatDropdownOpen(!isCatDropdownOpen);
+                          if (catError) setCatError(false);
+                        }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <Folder size={18} style={{ color: "var(--primary)" }} />
-                          <span style={{ fontWeight: uploadCategory ? 700 : 500, color: uploadCategory ? "var(--text-main)" : "var(--text-muted)" }}>
+                          <Folder size={18} style={{ color: catError && !uploadCategory ? "#ef4444" : "var(--primary)" }} />
+                          <span style={{ fontWeight: uploadCategory ? 700 : 500, color: uploadCategory ? "var(--text-main)" : (catError ? "#ef4444" : "var(--text-muted)") }}>
                             {uploadCategory || "Pilih Kategori Dokumen..."}
                           </span>
                         </div>
@@ -1023,6 +1380,14 @@ export default function Home() {
                         />
                       </div>
 
+                      {/* INLINE WARNING NOTIFICATION */}
+                      {catError && !uploadCategory && (
+                        <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "6px", color: "#ef4444", fontSize: "12px", fontWeight: 600 }}>
+                          <AlertCircle size={14} />
+                          <span>Kategori dokumen wajib dipilih sebelum mengunggah.</span>
+                        </div>
+                      )}
+
                       {/* DOWNWARD VERTICAL SCROLLABLE MENU */}
                       {isCatDropdownOpen && (
                         <div className="custom-cat-dropdown-menu">
@@ -1034,6 +1399,7 @@ export default function Home() {
                                 className={`custom-cat-dropdown-item ${isSelected ? "selected" : ""}`}
                                 onClick={() => {
                                   setUploadCategory(c.title);
+                                  setCatError(false);
                                   setIsCatDropdownOpen(false);
                                 }}
                               >
@@ -1079,9 +1445,14 @@ export default function Home() {
                   <h1 className="page-title">User & System Management</h1>
                   <p className="page-subtitle">Manage staff access levels, roles, and global system configurations.</p>
                 </div>
-                <button className="btn-primary-block" style={{ width: "auto", padding: "10px 18px", margin: 0, background: "var(--dark-navy)" }} onClick={() => setShowAddStaffModal(true)}>
-                  <UserPlus size={16} /> Add New Staff
-                </button>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button className="btn-secondary" style={{ padding: "10px 16px", display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 600 }} onClick={handleExportFullBackup}>
+                    <Database size={16} /> Backup Database JSON
+                  </button>
+                  <button className="btn-primary-block" style={{ width: "auto", padding: "10px 18px", margin: 0 }} onClick={() => setShowAddStaffModal(true)}>
+                    <UserPlus size={16} /> Add New Staff
+                  </button>
+                </div>
               </div>
 
               <div className="card">
@@ -1105,13 +1476,13 @@ export default function Home() {
                                 <User size={18} />
                               </div>
                               <div>
-                                <div style={{ fontWeight: 700 }}>{s.name}</div>
-                                <div style={{ fontSize: "11.5px", color: "var(--text-muted)" }}>
-                                  {s.email} {s.nip ? `• NIP: ${s.nip}` : ""}
-                                </div>
-                                <div style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 600 }}>
-                                  Bagian: {s.division || "Umum"}
-                                </div>
+                                  <div style={{ fontWeight: 700 }}>{s.name}</div>
+                                  <div style={{ fontSize: "11.5px", color: "var(--text-muted)" }}>
+                                    {s.email}
+                                  </div>
+                                  <div style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 600 }}>
+                                    Bagian: {s.division || "Umum"}
+                                  </div>
                               </div>
                             </div>
                           </td>
@@ -1124,8 +1495,8 @@ export default function Home() {
                           </td>
                           <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{s.lastActive}</td>
                           <td style={{ textAlign: "right" }}>
-                            <button className="icon-btn" onClick={() => handleToggleStaffStatus(s.id)} title="Ubah Status">
-                              <Settings size={16} />
+                            <button className="icon-btn" onClick={() => handleToggleStaffStatus(s.id)} title="Ganti Status Aktif/Nonaktif">
+                              <RotateCcw size={16} />
                             </button>
                           </td>
                         </tr>
@@ -1137,117 +1508,7 @@ export default function Home() {
             </section>
           )}
 
-          {/* VIEW 6: SETTINGS */}
-          {currentView === "settings" && (
-            <section className="page-view">
-              <div className="page-header">
-                <div>
-                  <h1 className="page-title">Pengaturan Sistem & Server DMS</h1>
-                  <p className="page-subtitle">Konfigurasi database Supabase PostgreSQL, direktori penyimpanan cloud, dan ekspor backup.</p>
-                </div>
-                <button className="btn-primary-block" style={{ width: "auto", padding: "10px 20px", margin: 0, background: "var(--dark-navy)" }} onClick={handleExportFullBackup}>
-                  <Database size={16} /> Backup Database JSON
-                </button>
-              </div>
-
-              {/* SUPABASE STATUS CARD */}
-              <div className="card" style={{ padding: "24px", marginBottom: "24px", background: "linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(37, 99, 235, 0.04) 100%)", border: "1px solid rgba(16, 185, 129, 0.25)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                    <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: "#10b981", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "20px" }}>
-                      ⚡
-                    </div>
-                    <div>
-                      <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "var(--text-main)" }}>Supabase Cloud Database & Storage Mode</h3>
-                      <p style={{ fontSize: "12.5px", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
-                        Database PostgreSQL Supabase terintegrasi dengan fallback otomatis ke database lokal.
-                      </p>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: "12px", fontWeight: 700, background: "var(--success-bg)", color: "var(--success)", padding: "6px 14px", borderRadius: "20px", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
-                    ✓ Supabase Integration Ready
-                  </span>
-                </div>
-
-                <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid var(--border-color)", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px", fontSize: "12.5px" }}>
-                  <div>
-                    <span style={{ color: "var(--text-muted)" }}>Skrip Setup Database:</span>
-                    <div style={{ fontWeight: 700, color: "var(--text-main)", marginTop: "2px" }}>
-                      <code>/dms-app/supabase_schema.sql</code>
-                    </div>
-                  </div>
-                  <div>
-                    <span style={{ color: "var(--text-muted)" }}>File Konfigurasi URL & Key:</span>
-                    <div style={{ fontWeight: 700, color: "var(--text-main)", marginTop: "2px" }}>
-                      <code>/dms-app/.env.local</code>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", marginBottom: "24px" }}>
-                <div className="card" style={{ padding: "24px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                    <div className="stat-icon-wrapper blue"><HardDrive size={22} /></div>
-                    <div>
-                      <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0 }}>Penyimpanan Server Pusat</h3>
-                      <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>Penyimpanan Cloud Storage & Local Fallback</p>
-                    </div>
-                  </div>
-                  <div style={{ background: "var(--bg-body)", padding: "14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", fontSize: "12.5px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <span>Cloud Bucket Storage:</span>
-                      <code>Supabase 'documents'</code>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <span>Database Tabel:</span>
-                      <code>documents, categories, staff</code>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>Mode Cadangan:</span>
-                      <code>Local JSON Fallback</code>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="card" style={{ padding: "24px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                    <div className="stat-icon-wrapper green" style={{ background: "var(--success-bg)", color: "var(--success)" }}><Shield size={22} /></div>
-                    <div>
-                      <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0 }}>Keamanan & Hak Akses</h3>
-                      <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>Proteksi akses khusus Bagian Umum Setda</p>
-                    </div>
-                  </div>
-                  <div style={{ background: "var(--bg-body)", padding: "14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", fontSize: "12.5px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <span>Domain Terverifikasi:</span>
-                      <strong>@setda.gov.id / setda.gunungkidulkab.go.id</strong>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <span>Metode Enkripsi:</span>
-                      <strong>Supabase RLS & Cloud Storage</strong>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>Batas Maksimum Berkas:</span>
-                      <strong>50 MB per Upload</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: "24px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "8px" }}>Unduh Backup Cadangan Sistem</h3>
-                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>
-                  Ekspor seluruh data dokumen, kategori, dan daftar staf dalam satu paket file JSON resmi untuk keperluan arsip atau pemulihan bencana.
-                </p>
-                <button className="btn-secondary" onClick={handleExportFullBackup} style={{ padding: "10px 20px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                  <Download size={16} /> Unduh Paket Backup JSON ({documents.length} Dokumen, {categories.length} Kategori, {staff.length} Staf)
-                </button>
-              </div>
-            </section>
-          )}
-
-          {/* VIEW 7: SUPPORT */}
+          {/* VIEW 6: SUPPORT */}
           {currentView === "support" && (
             <section className="page-view">
               <div className="page-header">
@@ -1349,10 +1610,21 @@ export default function Home() {
       {selectedDocIds.length > 0 && (
         <div className="batch-actions-bar">
           <span style={{ fontWeight: 600, fontSize: "13px" }}>{selectedDocIds.length} dokumen dipilih</span>
-          <button className="batch-btn" onClick={() => showToastMsg("Mengunduh paket ZIP...", "success")}>
-            <Download size={14} /> Unduh ZIP
+          <button
+            type="button"
+            className="batch-btn"
+            disabled={isBatchDownloading}
+            onClick={handleBatchDownload}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+          >
+            <Download size={14} /> {isBatchDownloading ? "Mengunduh..." : `Unduh Terpilih (${selectedDocIds.length})`}
           </button>
-          <button className="batch-btn" onClick={handleBatchDelete}>
+          <button
+            type="button"
+            className="batch-btn"
+            onClick={() => setShowBatchDeleteModal(true)}
+            style={{ background: "rgba(239, 68, 68, 0.25)", borderColor: "rgba(239, 68, 68, 0.4)", color: "#fca5a5" }}
+          >
             <Trash2 size={14} /> Hapus Terpilih
           </button>
         </div>
@@ -1479,24 +1751,163 @@ export default function Home() {
 
             <div className="modal-footer" style={{ padding: "16px 24px", background: "var(--bg-body)", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
               <button className="btn-secondary" onClick={() => setSelectedDoc(null)} style={{ padding: "9px 20px", fontWeight: 600 }}>Tutup</button>
-              {selectedDoc.fileUrl ? (
-                <a
-                  href={selectedDoc.fileUrl}
-                  download={selectedDoc.name}
-                  className="btn-primary-block"
-                  style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, var(--dark-navy) 0%, var(--primary) 100%)", textDecoration: "none", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}
-                >
-                  <Download size={16} /> Unduh Berkas Asli
-                </a>
-              ) : (
+              <button
+                className="btn-primary-block"
+                style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, var(--dark-navy) 0%, var(--primary) 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}
+                onClick={() => handleDownloadDocument(selectedDoc)}
+              >
+                <Download size={16} /> Unduh Berkas ke Komputer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {docToDelete && (
+        <div className="delete-confirm-modal-overlay" onClick={() => setDocToDelete(null)}>
+          <div className="delete-confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-modal-backdrop-glow"></div>
+            
+            <div className="delete-modal-top-bar">
+              <button
+                type="button"
+                className="delete-modal-close-btn"
+                onClick={() => setDocToDelete(null)}
+                title="Tutup"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="delete-modal-header-centered">
+              <div className="delete-icon-outer-ring">
+                <div className="delete-icon-inner-badge">
+                  <Trash2 size={24} />
+                </div>
+              </div>
+              <h3 className="delete-modal-title">Hapus Dokumen Permanen?</h3>
+              <p className="delete-modal-subtitle">
+                Berkas ini akan segera dihapus dari penyimpanan server pusat Setda dan tidak dapat diakses kembali.
+              </p>
+            </div>
+
+            <div className="delete-modal-body-custom">
+              {/* FILE PREVIEW CARD */}
+              <div className="delete-file-preview-card">
+                <div className={`delete-file-pill-icon file-type-icon ${docToDelete.type}`}>
+                  {docToDelete.type.toUpperCase()}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="delete-file-name-text" title={docToDelete.name}>
+                    {docToDelete.name}
+                  </div>
+                  <div className="delete-file-meta-row">
+                    <span className="delete-meta-tag">{docToDelete.category}</span>
+                    <span>•</span>
+                    <span>{docToDelete.size}</span>
+                    {docToDelete.uploader && (
+                      <>
+                        <span>•</span>
+                        <span>Oleh: {docToDelete.uploader}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* WARNING CALLOUT BANNER */}
+              <div className="delete-warning-banner">
+                <AlertCircle size={17} style={{ flexShrink: 0, marginTop: "1px" }} />
+                <div>
+                  <strong>Peringatan Penting:</strong> Tindakan ini bersifat permanen. Seluruh riwayat dan berkas asli tidak dapat dipulihkan kembali.
+                </div>
+              </div>
+
+              {/* MODAL FOOTER BUTTONS */}
+              <div className="delete-modal-footer-actions">
                 <button
-                  className="btn-primary-block"
-                  style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, var(--dark-navy) 0%, var(--primary) 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}
-                  onClick={() => showToastMsg("Mengunduh berkas...", "success")}
+                  type="button"
+                  className="delete-btn-cancel"
+                  onClick={() => setDocToDelete(null)}
                 >
-                  <Download size={16} /> Unduh Dokumen
+                  Batal
                 </button>
-              )}
+                <button
+                  type="button"
+                  className="delete-btn-confirm"
+                  onClick={async () => {
+                    const id = docToDelete.id;
+                    setDocToDelete(null);
+                    await handleDeleteDocument(id);
+                  }}
+                >
+                  <Trash2 size={16} /> Ya, Hapus Berkas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BATCH DELETE CONFIRMATION MODAL */}
+      {showBatchDeleteModal && (
+        <div className="delete-confirm-modal-overlay" onClick={() => setShowBatchDeleteModal(false)}>
+          <div className="delete-confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-modal-backdrop-glow"></div>
+            
+            <div className="delete-modal-top-bar">
+              <button
+                type="button"
+                className="delete-modal-close-btn"
+                onClick={() => setShowBatchDeleteModal(false)}
+                title="Tutup"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="delete-modal-header-centered">
+              <div className="delete-icon-outer-ring">
+                <div className="delete-icon-inner-badge">
+                  <Trash2 size={24} />
+                </div>
+              </div>
+              <h3 className="delete-modal-title">Hapus {selectedDocIds.length} Dokumen Sekaligus?</h3>
+              <p className="delete-modal-subtitle">
+                {selectedDocIds.length} berkas yang dipilih akan segera dihapus permanen dari server pusat.
+              </p>
+            </div>
+
+            <div className="delete-modal-body-custom">
+              {/* WARNING CALLOUT BANNER */}
+              <div className="delete-warning-banner">
+                <AlertCircle size={17} style={{ flexShrink: 0, marginTop: "1px" }} />
+                <div>
+                  <strong>Peringatan Penting:</strong> Tindakan ini akan menghapus {selectedDocIds.length} berkas sekaligus secara permanen. Seluruh file tidak dapat dipulihkan.
+                </div>
+              </div>
+
+              {/* MODAL FOOTER BUTTONS */}
+              <div className="delete-modal-footer-actions">
+                <button
+                  type="button"
+                  className="delete-btn-cancel"
+                  onClick={() => setShowBatchDeleteModal(false)}
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  className="delete-btn-confirm"
+                  onClick={async () => {
+                    setShowBatchDeleteModal(false);
+                    await handleBatchDelete();
+                  }}
+                >
+                  <Trash2 size={16} /> Ya, Hapus Semua ({selectedDocIds.length})
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1521,8 +1932,11 @@ export default function Home() {
 
             <form onSubmit={async (e) => {
               e.preventDefault();
-              const title = (e.target as any).catTitle.value;
-              const desc = (e.target as any).catDesc.value;
+              const form = e.currentTarget;
+              const titleInput = form.elements.namedItem("catTitle") as HTMLInputElement;
+              const descInput = form.elements.namedItem("catDesc") as HTMLTextAreaElement;
+              const title = titleInput ? titleInput.value : "";
+              const desc = descInput ? descInput.value : "";
               try {
                 const res = await fetch("/api/categories", {
                   method: "POST",
@@ -1535,7 +1949,7 @@ export default function Home() {
                   setShowAddCategoryModal(false);
                   showToastMsg(`Kategori "${title}" berhasil disimpan di server!`, "success");
                 }
-              } catch (err) {
+              } catch {
                 showToastMsg("Gagal menyimpan kategori ke server.", "error");
               }
             }}>
@@ -1588,11 +2002,17 @@ export default function Home() {
 
              <form onSubmit={async (e) => {
               e.preventDefault();
-              const name = (e.target as any).staffName.value;
-              const email = (e.target as any).staffEmail.value;
-              const role = (e.target as any).staffRole.value;
-              const nip = (e.target as any).staffNip.value;
-              const division = (e.target as any).staffDivision.value;
+              const form = e.currentTarget;
+              const nameInput = form.elements.namedItem("staffName") as HTMLInputElement;
+              const emailInput = form.elements.namedItem("staffEmail") as HTMLInputElement;
+              const roleInput = form.elements.namedItem("staffRole") as HTMLSelectElement;
+              const nipInput = form.elements.namedItem("staffNip") as HTMLInputElement;
+              const divisionInput = form.elements.namedItem("staffDivision") as HTMLSelectElement;
+              const name = nameInput ? nameInput.value : "";
+              const email = emailInput ? emailInput.value : "";
+              const role = roleInput ? roleInput.value : "Staff";
+              const nip = nipInput ? nipInput.value : "";
+              const division = divisionInput ? divisionInput.value : "Umum";
               try {
                 const res = await fetch("/api/staff", {
                   method: "POST",
@@ -1605,7 +2025,7 @@ export default function Home() {
                   setShowAddStaffModal(false);
                   showToastMsg(`Staf "${name}" berhasil didaftarkan di server!`, "success");
                 }
-              } catch (err) {
+              } catch {
                 showToastMsg("Gagal mendaftarkan staf ke server.", "error");
               }
             }}>
@@ -1679,10 +2099,15 @@ export default function Home() {
 
             <form onSubmit={(e) => {
               e.preventDefault();
-              const name = (e.target as any).profName.value;
-              const email = (e.target as any).profEmail.value;
-              const nip = (e.target as any).profNip.value;
-              const dept = (e.target as any).profDept.value;
+              const form = e.currentTarget;
+              const nameInput = form.elements.namedItem("profName") as HTMLInputElement;
+              const emailInput = form.elements.namedItem("profEmail") as HTMLInputElement;
+              const nipInput = form.elements.namedItem("profNip") as HTMLInputElement;
+              const deptInput = form.elements.namedItem("profDept") as HTMLInputElement;
+              const name = nameInput ? nameInput.value : currentUser.name;
+              const email = emailInput ? emailInput.value : currentUser.email;
+              const nip = nipInput ? nipInput.value : currentUser.nip;
+              const dept = deptInput ? deptInput.value : currentUser.department;
               setCurrentUser((prev) => ({ ...prev, name, email, nip, department: dept }));
               setShowProfileModal(false);
               showToastMsg("Profil pengguna berhasil diperbarui!", "success");
@@ -1758,7 +2183,11 @@ export default function Home() {
       {toast && (
         <div className="toast-container">
           <div className={`toast ${toast.type}`}>
-            <CheckCircle2 size={18} />
+            {toast.type === "warning" || toast.type === "error" ? (
+              <AlertCircle size={18} />
+            ) : (
+              <CheckCircle2 size={18} />
+            )}
             <span>{toast.message}</span>
           </div>
         </div>

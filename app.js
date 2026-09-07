@@ -25,7 +25,13 @@ document.addEventListener('DOMContentLoaded', () => {
     ],
     staff: [
       { id: 1, name: 'Budi Santoso', email: 'budi.s@setda.gov.id', role: 'Admin', status: 'Active', lastActive: 'Just now', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80', nip: '19850712 201001 1 008', division: 'Umum' }
-    ]
+    ],
+    selectedDocIds: [],
+    selectedUploadFile: null,
+    searchQuery: '',
+    catFilter: 'all',
+    yearFilter: 'all',
+    typeFilter: 'all'
   };
 
   const loginView = document.getElementById('login-view');
@@ -87,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const cleanNip = nipVal.replace(/\D/g, '');
       const loginCard = document.querySelector('.login-card');
 
-      // 1. Validate NIP length
       if (cleanNip.length !== 18) {
         if (loginErrorContainer && loginErrorText) {
           loginErrorContainer.style.display = 'block';
@@ -100,15 +105,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // 2. Validate Division based on NIP
-      // Allowed NIPs (Staf Bagian Umum)
       const allowedStaffMap = {
         '198507122010011008': { name: 'Budi Santoso', email: 'budi.s@setda.gov.id', role: 'Admin', division: 'Umum' },
         '199008152014021005': { name: 'Ahmad Fauzi', email: 'ahmad.f@setda.gov.id', role: 'Staff', division: 'Umum' },
         '199512102019012001': { name: 'Siti Nurhaliza', email: 'siti.n@setda.gov.id', role: 'Viewer', division: 'Umum' }
       };
 
-      // Denied NIPs (Staf Bagian Lain)
       const deniedStaffMap = {
         '199103242015032002': { name: 'Hendra Wijaya', division: 'Protokol & Komunikasi Pimpinan' }
       };
@@ -138,11 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Successful login
       if (loginErrorContainer) loginErrorContainer.style.display = 'none';
 
       const matchedStaff = allowedStaffMap[cleanNip];
-
       state.user = {
         name: matchedStaff.name,
         email: matchedStaff.email,
@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Profile Toggle & Dropdown
   const profileToggle = document.getElementById('user-profile-toggle');
   const profileDropdown = document.getElementById('profile-menu-dropdown');
   const btnLogout = document.getElementById('btn-logout');
@@ -170,6 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
       e.stopPropagation();
       const isVisible = profileDropdown.style.display === 'block';
       profileDropdown.style.display = isVisible ? 'none' : 'block';
+      const notifDrawer = document.getElementById('notification-drawer');
+      if (notifDrawer) notifDrawer.style.display = 'none';
     });
 
     document.addEventListener('click', () => {
@@ -186,6 +189,51 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Dark Mode Toggle
+  const btnToggleTheme = document.getElementById('btn-toggle-theme');
+  if (btnToggleTheme) {
+    btnToggleTheme.addEventListener('click', () => {
+      state.darkMode = !state.darkMode;
+      if (state.darkMode) {
+        document.body.classList.add('dark-mode');
+        document.body.setAttribute('data-theme', 'dark');
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.body.removeAttribute('data-theme');
+      }
+      showToast(state.darkMode ? 'Mode Gelap Aktif' : 'Mode Terang Aktif', 'info');
+    });
+  }
+
+  // Notification Drawer
+  const btnNotifications = document.getElementById('btn-notifications');
+  const notificationDrawer = document.getElementById('notification-drawer');
+  const btnReadAllNotifs = document.getElementById('btn-read-all-notifications');
+
+  if (btnNotifications && notificationDrawer) {
+    btnNotifications.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = notificationDrawer.style.display === 'block';
+      notificationDrawer.style.display = isVisible ? 'none' : 'block';
+      if (profileDropdown) profileDropdown.style.display = 'none';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (notificationDrawer && !notificationDrawer.contains(e.target) && e.target !== btnNotifications) {
+        notificationDrawer.style.display = 'none';
+      }
+    });
+  }
+
+  if (btnReadAllNotifs) {
+    btnReadAllNotifs.addEventListener('click', () => {
+      const dot = document.querySelector('#btn-notifications .badge-dot');
+      if (dot) dot.style.display = 'none';
+      showToast('Semua notifikasi telah ditandai dibaca.');
+    });
+  }
+
+  // Sidebar navigation & Nav Triggers
   document.querySelectorAll('.nav-item[data-view]').forEach(nav => {
     nav.addEventListener('click', () => {
       const view = nav.getAttribute('data-view');
@@ -193,11 +241,339 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  document.querySelectorAll('.nav-trigger[data-view]').forEach(trig => {
+    trig.addEventListener('click', (e) => {
+      e.preventDefault();
+      const view = trig.getAttribute('data-view');
+      switchView(view);
+    });
+  });
+
+  // Global Search
+  const globalSearchInput = document.getElementById('global-search-input');
+  if (globalSearchInput) {
+    globalSearchInput.addEventListener('input', (e) => {
+      state.searchQuery = e.target.value.toLowerCase();
+      renderDashboardTable();
+      renderAllDocumentsTable();
+    });
+  }
+
+  // Filters on All Documents View
+  const docCatFilter = document.getElementById('doc-category-filter');
+  const docYearFilter = document.getElementById('doc-year-filter');
+  const docTypeFilter = document.getElementById('doc-type-filter');
+  const btnResetFilters = document.getElementById('btn-reset-filters');
+
+  if (docCatFilter) {
+    docCatFilter.addEventListener('change', (e) => {
+      state.catFilter = e.target.value;
+      renderAllDocumentsTable();
+    });
+  }
+  if (docYearFilter) {
+    docYearFilter.addEventListener('change', (e) => {
+      state.yearFilter = e.target.value;
+      renderAllDocumentsTable();
+    });
+  }
+  if (docTypeFilter) {
+    docTypeFilter.addEventListener('change', (e) => {
+      state.typeFilter = e.target.value;
+      renderAllDocumentsTable();
+    });
+  }
+  if (btnResetFilters) {
+    btnResetFilters.addEventListener('click', () => {
+      state.catFilter = 'all';
+      state.yearFilter = 'all';
+      state.typeFilter = 'all';
+      state.searchQuery = '';
+      if (docCatFilter) docCatFilter.value = 'all';
+      if (docYearFilter) docYearFilter.value = 'all';
+      if (docTypeFilter) docTypeFilter.value = 'all';
+      if (globalSearchInput) globalSearchInput.value = '';
+      renderAllDocumentsTable();
+      showToast('Filter telah direset.');
+    });
+  }
+
+  // Export CSV
+  const btnExportCsv = document.getElementById('btn-export-csv');
+  if (btnExportCsv) {
+    btnExportCsv.addEventListener('click', () => {
+      if (state.documents.length === 0) {
+        showToast('Tidak ada dokumen untuk diekspor.', 'error');
+        return;
+      }
+      let csvContent = "data:text/csv;charset=utf-8,ID,Nama Berkas,Kategori,Status,Tanggal,Pengunggah\n";
+      state.documents.forEach(d => {
+        csvContent += `${d.id},"${d.name}","${d.category}",${d.status},"${d.date}","${d.uploader}"\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Dokumen_Setda_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('File CSV berhasil diunduh!', 'success');
+    });
+  }
+
+  // Backup JSON
+  const btnBackupJson = document.getElementById('btn-backup-json');
+  if (btnBackupJson) {
+    btnBackupJson.addEventListener('click', () => {
+      const backupData = {
+        exportedAt: new Date().toISOString(),
+        system: "DMS Setda Bagian Umum Kab. Gunungkidul",
+        documentsCount: state.documents.length,
+        categoriesCount: state.categories.length,
+        staffCount: state.staff.length,
+        documents: state.documents,
+        categories: state.categories,
+        staff: state.staff
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+      const link = document.createElement("a");
+      link.setAttribute("href", dataStr);
+      link.setAttribute("download", `DMS_Full_Backup_Setda_${new Date().toISOString().split("T")[0]}.json`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Cadangan Database JSON berhasil diunduh!', 'success');
+    });
+  }
+
+  // Modal Helpers
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeModal(modal) {
+    if (modal) modal.classList.remove('active');
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal(overlay);
+    });
+  });
+
+  document.querySelectorAll('.modal-close-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const overlay = btn.closest('.modal-overlay');
+      closeModal(overlay);
+    });
+  });
+
+  // Add Category Modal & Form
+  const btnAddCategory = document.getElementById('btn-add-category');
+  const formAddCategory = document.getElementById('form-add-category');
+  if (btnAddCategory) {
+    btnAddCategory.addEventListener('click', () => openModal('modal-add-category'));
+  }
+  if (formAddCategory) {
+    formAddCategory.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const titleInput = document.getElementById('cat-title');
+      const descInput = document.getElementById('cat-desc');
+      if (!titleInput || !titleInput.value) return;
+
+      const newCat = {
+        id: Date.now(),
+        title: titleInput.value.trim(),
+        desc: descInput ? descInput.value.trim() : '',
+        docs: 0,
+        updated: 'Baru saja',
+        status: 'active'
+      };
+
+      state.categories.push(newCat);
+      renderCategoriesGrid();
+      closeModal(document.getElementById('modal-add-category'));
+      formAddCategory.reset();
+      showToast(`Kategori "${newCat.title}" berhasil ditambahkan!`, 'success');
+    });
+  }
+
+  // Add Staff Modal & Form
+  const btnAddStaff = document.getElementById('btn-add-staff');
+  const formAddStaff = document.getElementById('form-add-staff');
+  if (btnAddStaff) {
+    btnAddStaff.addEventListener('click', () => openModal('modal-add-staff'));
+  }
+  if (formAddStaff) {
+    formAddStaff.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nameInput = document.getElementById('staff-name');
+      const emailInput = document.getElementById('staff-email');
+      const roleInput = document.getElementById('staff-role');
+
+      if (!nameInput || !emailInput) return;
+
+      const newStaffMember = {
+        id: Date.now(),
+        name: nameInput.value.trim(),
+        email: emailInput.value.trim(),
+        role: roleInput ? roleInput.value : 'Staff',
+        status: 'Active',
+        lastActive: 'Baru saja',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=120&q=80',
+        nip: '199' + Math.floor(10000000000000 + Math.random() * 90000000000000),
+        division: 'Umum'
+      };
+
+      state.staff.push(newStaffMember);
+      renderStaffTable();
+      closeModal(document.getElementById('modal-add-staff'));
+      formAddStaff.reset();
+      showToast(`Staf "${newStaffMember.name}" berhasil didaftarkan!`, 'success');
+    });
+  }
+
+  // File Upload Handling
+  const dropzone = document.getElementById('upload-dropzone');
+  const fileInputHidden = document.getElementById('file-input-hidden');
+  const dropzonePreview = document.getElementById('dropzone-file-preview');
+  const selectedFileName = document.getElementById('selected-filename');
+  const selectedFileSize = document.getElementById('selected-filesize');
+  const uploadForm = document.getElementById('upload-document-form');
+  const btnCancelUpload = document.getElementById('btn-cancel-upload');
+
+  if (dropzone && fileInputHidden) {
+    dropzone.addEventListener('click', () => fileInputHidden.click());
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.style.borderColor = 'var(--primary)';
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.style.borderColor = 'var(--border-color)';
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.style.borderColor = 'var(--border-color)';
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+    fileInputHidden.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+  }
+
+  function handleFileSelect(file) {
+    state.selectedUploadFile = file;
+    if (dropzonePreview && selectedFileName && selectedFileSize) {
+      selectedFileName.textContent = file.name;
+      selectedFileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+      dropzonePreview.style.display = 'block';
+    }
+  }
+
+  if (btnCancelUpload) {
+    btnCancelUpload.addEventListener('click', () => {
+      if (uploadForm) uploadForm.reset();
+      state.selectedUploadFile = null;
+      if (dropzonePreview) dropzonePreview.style.display = 'none';
+      switchView('all-documents');
+    });
+  }
+
+  if (uploadForm) {
+    uploadForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const titleInput = document.getElementById('upload-doc-title');
+      const catInput = document.getElementById('upload-doc-category');
+      const descInput = document.getElementById('upload-doc-desc');
+
+      if (!titleInput || !titleInput.value.trim()) {
+        showToast('Peringatan: Silakan isi judul dokumen terlebih dahulu!', 'warning');
+        return;
+      }
+
+      if (!catInput || !catInput.value.trim()) {
+        showToast('Peringatan: Anda belum memilih kategori dokumen!', 'warning');
+        if (catInput) catInput.focus();
+        return;
+      }
+
+      const ext = state.selectedUploadFile ? state.selectedUploadFile.name.split('.').pop().toLowerCase() : 'pdf';
+      const sizeStr = state.selectedUploadFile ? (state.selectedUploadFile.size / (1024 * 1024)).toFixed(1) + ' MB' : '1.8 MB';
+
+      const newDoc = {
+        id: Date.now(),
+        name: titleInput.value.trim().endsWith(`.${ext}`) ? titleInput.value.trim() : `${titleInput.value.trim()}.${ext}`,
+        category: catInput ? catInput.value : 'Surat Keputusan',
+        size: sizeStr,
+        version: 'v1.0',
+        date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        uploader: state.user.name,
+        type: ['pdf', 'docx', 'xlsx'].includes(ext) ? ext : 'pdf',
+        desc: descInput ? descInput.value : '',
+        status: 'Disetujui'
+      };
+
+      state.documents.unshift(newDoc);
+      uploadForm.reset();
+      state.selectedUploadFile = null;
+      if (dropzonePreview) dropzonePreview.style.display = 'none';
+      switchView('all-documents');
+      showToast(`Dokumen "${newDoc.name}" berhasil diunggah!`, 'success');
+    });
+  }
+
+  // Delete Document with Confirmation Dialog
+  window.deleteDocument = function(id) {
+    const doc = state.documents.find(d => d.id === id);
+    const docName = doc ? `"${doc.name}"` : 'dokumen ini';
+    if (!confirm(`Konfirmasi Hapus Dokumen:\nApakah Anda yakin ingin menghapus berkas ${docName} dari penyimpanan server? Tindakan ini tidak dapat dibatalkan.`)) {
+      return;
+    }
+    state.documents = state.documents.filter(d => d.id !== id);
+    renderDashboardTable();
+    renderAllDocumentsTable();
+    renderCategoriesGrid();
+    showToast('Dokumen berhasil dihapus dari server!', 'info');
+  };
+
+  // Document Viewer Modal Trigger
+  window.viewDocument = function(id) {
+    const doc = state.documents.find(d => d.id === id);
+    if (!doc) return;
+
+    const modalTitle = document.getElementById('modal-doc-title');
+    const modalBadge = document.getElementById('modal-doc-category-badge');
+    const modalUploader = document.getElementById('modal-doc-uploader');
+    const modalDate = document.getElementById('modal-doc-date');
+    const modalSize = document.getElementById('modal-doc-size');
+    const modalVersion = document.getElementById('modal-doc-version');
+
+    if (modalTitle) modalTitle.textContent = doc.name;
+    if (modalBadge) modalBadge.textContent = doc.category;
+    if (modalUploader) modalUploader.textContent = doc.uploader;
+    if (modalDate) modalDate.textContent = doc.date;
+    if (modalSize) modalSize.textContent = doc.size;
+    if (modalVersion) modalVersion.textContent = doc.version || 'v1.0';
+
+    openModal('modal-doc-viewer');
+  };
+
+  // Render Functions
   function renderDashboardTable() {
     const tbody = document.getElementById('dashboard-recent-table-body');
     if (!tbody) return;
 
-    if (state.documents.length === 0) {
+    let filtered = state.documents;
+    if (state.searchQuery) {
+      filtered = filtered.filter(d => d.name.toLowerCase().includes(state.searchQuery) || d.category.toLowerCase().includes(state.searchQuery));
+    }
+
+    if (filtered.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="4" style="text-align: center; padding: 32px; color: var(--text-muted);">
@@ -208,14 +584,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    tbody.innerHTML = state.documents.map(doc => `
+    tbody.innerHTML = filtered.slice(0, 5).map(doc => `
       <tr>
         <td>
-          <div class="file-name-cell">
+          <div class="file-name-cell" style="cursor: pointer;" onclick="viewDocument(${doc.id})">
             <div class="file-type-icon ${doc.type}">${doc.type.toUpperCase()}</div>
             <div>
-              <div>${doc.name}</div>
-              <div class="file-meta">${doc.size} • ${doc.version}</div>
+              <div style="font-weight: 600;">${doc.name}</div>
+              <div class="file-meta">${doc.size} • ${doc.version || 'v1.0'}</div>
             </div>
           </div>
         </td>
@@ -234,7 +610,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbody = document.getElementById('documents-table-body');
     if (!tbody) return;
 
-    if (state.documents.length === 0) {
+    let filtered = state.documents.filter(doc => {
+      if (state.catFilter !== 'all' && doc.category !== state.catFilter) return false;
+      if (state.typeFilter !== 'all' && doc.type !== state.typeFilter) return false;
+      if (state.searchQuery && !doc.name.toLowerCase().includes(state.searchQuery) && !doc.category.toLowerCase().includes(state.searchQuery)) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
@@ -245,15 +628,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    tbody.innerHTML = state.documents.map(doc => `
+    tbody.innerHTML = filtered.map(doc => `
       <tr>
-        <td><input type="checkbox"></td>
+        <td><input type="checkbox" class="doc-checkbox" data-id="${doc.id}"></td>
         <td>
-          <div class="file-name-cell">
+          <div class="file-name-cell" style="cursor: pointer;" onclick="viewDocument(${doc.id})">
             <div class="file-type-icon ${doc.type}">${doc.type.toUpperCase()}</div>
             <div>
               <div style="font-weight: 600;">${doc.name}</div>
-              <div class="file-meta">${doc.size} • ${doc.version}</div>
+              <div class="file-meta">${doc.size} • ${doc.version || 'v1.0'}</div>
             </div>
           </div>
         </td>
@@ -325,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td style="color: var(--text-muted); font-size: 13px;">${s.lastActive}</td>
         <td style="text-align: right;">
-          <button class="icon-btn" onclick="toggleStaffStatus(${s.id})" title="Ubah Status">
+          <button class="icon-btn" onclick="toggleStaffStatus(${s.id})" title="Ganti Status Aktif/Nonaktif">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           </button>
         </td>

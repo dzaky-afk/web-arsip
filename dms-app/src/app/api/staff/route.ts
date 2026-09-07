@@ -3,9 +3,20 @@ import fs from "fs";
 import path from "path";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
+export interface StaffItem {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  lastActive: string;
+  nip?: string;
+  division?: string;
+}
+
 const STAFF_FILE = path.join(process.cwd(), "data", "staff.json");
 
-const DEFAULT_STAFF = [
+const DEFAULT_STAFF: StaffItem[] = [
   { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Just now", nip: "19850712 201001 1 008", division: "Umum" },
   { id: 2, name: "Ahmad Fauzi", email: "ahmad.f@setda.gov.id", role: "Staff", status: "Active", lastActive: "2 hours ago", nip: "19900815 201402 1 005", division: "Umum" },
   { id: 3, name: "Siti Nurhaliza", email: "siti.n@setda.gov.id", role: "Viewer", status: "Active", lastActive: "Yesterday", nip: "19951210 201901 2 001", division: "Umum" },
@@ -38,9 +49,9 @@ export async function GET() {
 
     ensureStaffExists();
     const data = fs.readFileSync(STAFF_FILE, "utf-8");
-    const staff = JSON.parse(data || "[]");
+    const staff: StaffItem[] = JSON.parse(data || "[]");
     return NextResponse.json(staff);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch staff list" }, { status: 500 });
   }
 }
@@ -55,7 +66,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Name and Email are required" }, { status: 400 });
     }
 
-    const newStaff = {
+    const newStaff: StaffItem = {
       id: Date.now(),
       name: name.trim(),
       email: email.trim(),
@@ -80,12 +91,12 @@ export async function POST(req: NextRequest) {
 
     ensureStaffExists();
     const data = fs.readFileSync(STAFF_FILE, "utf-8");
-    const staff = JSON.parse(data || "[]");
+    const staff: StaffItem[] = JSON.parse(data || "[]");
     staff.push(newStaff);
     fs.writeFileSync(STAFF_FILE, JSON.stringify(staff, null, 2));
 
     return NextResponse.json(newStaff);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to add staff" }, { status: 500 });
   }
 }
@@ -94,7 +105,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, action } = body;
+    const { id } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Missing staff ID" }, { status: 400 });
@@ -102,9 +113,9 @@ export async function PATCH(req: NextRequest) {
 
     ensureStaffExists();
     const localData = fs.readFileSync(STAFF_FILE, "utf-8");
-    let localStaffList = JSON.parse(localData || "[]");
+    let localStaffList: StaffItem[] = JSON.parse(localData || "[]");
 
-    const target = localStaffList.find((s: any) => s.id === id);
+    const target = localStaffList.find((s: StaffItem) => s.id === id);
     const newStatus = target && target.status === "Active" ? "Suspended" : "Active";
 
     if (isSupabaseConfigured && supabase) {
@@ -114,7 +125,7 @@ export async function PATCH(req: NextRequest) {
         .eq("id", id);
     }
 
-    localStaffList = localStaffList.map((s: any) => {
+    localStaffList = localStaffList.map((s: StaffItem) => {
       if (s.id === id) {
         return { ...s, status: newStatus };
       }
@@ -123,7 +134,7 @@ export async function PATCH(req: NextRequest) {
 
     fs.writeFileSync(STAFF_FILE, JSON.stringify(localStaffList, null, 2));
     return NextResponse.json({ success: true, staff: localStaffList });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to update staff" }, { status: 500 });
   }
 }

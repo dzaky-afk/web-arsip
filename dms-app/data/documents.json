@@ -1,1 +1,62 @@
-[]
+[
+  {
+    "id": 1788763922613,
+    "name": "DPP Maminek 52.docx",
+    "category": "Laporan Keuangan",
+    "status": "Approved",
+    "size": "4.58 MB",
+    "version": "v1.0",
+    "date": "Senin, 7 Sep 2026, 13:52 WIB",
+    "dateFull": "2026-09-07T06:52:02.613Z",
+    "uploader": "Budi Santoso",
+    "type": "docx",
+    "fileUrl": "https://prrhpwpqyzrkaxvdldhx.supabase.co/storage/v1/object/public/documents/1788763921369_DPP_Maminek_52.docx",
+    "desc": "",
+    "tags": ""
+  },
+  {
+    "id": 1788763908678,
+    "name": "DPP Maminek 55.docx",
+    "category": "Laporan Keuangan",
+    "status": "Approved",
+    "size": "4.58 MB",
+    "version": "v1.0",
+    "date": "Senin, 7 Sep 2026, 13:51 WIB",
+    "dateFull": "2026-09-07T06:51:48.678Z",
+    "uploader": "Budi Santoso",
+    "type": "docx",
+    "fileUrl": "https://prrhpwpqyzrkaxvdldhx.supabase.co/storage/v1/object/public/documents/1788763907269_DPP_Maminek_55.docx",
+    "desc": "",
+    "tags": ""
+  },
+  {
+    "id": 1788743424174,
+    "name": "DPP Maminek 54.docx",
+    "category": "Arsip Umum",
+    "status": "Approved",
+    "size": "4.58 MB",
+    "version": "v1.0",
+    "date": "Senin, 7 Sep 2026, 08:10 WIB",
+    "dateFull": "2026-09-07T01:10:24.174Z",
+    "uploader": "Budi Santoso",
+    "type": "docx",
+    "fileUrl": "https://prrhpwpqyzrkaxvdldhx.supabase.co/storage/v1/object/public/documents/1788743422628_DPP_Maminek_54.docx",
+    "desc": "test",
+    "tags": ""
+  },
+  {
+    "id": 1788326197556,
+    "name": "Letter_of_Intent_Indonesian.docx",
+    "category": "Surat Keputusan",
+    "status": "Approved",
+    "size": "0.03 MB",
+    "version": "v1.0",
+    "date": "2 Sep 2026, 12:16 WIB",
+    "dateFull": "2026-09-02T05:16:37.556Z",
+    "uploader": "Budi Santoso",
+    "type": "docx",
+    "fileUrl": "/uploads/1788326197551_Letter_of_Intent_Indonesian.docx",
+    "desc": "test",
+    "tags": ""
+  }
+]

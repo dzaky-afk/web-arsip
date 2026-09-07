@@ -3,6 +3,22 @@ import fs from "fs";
 import path from "path";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
+export interface DocumentItem {
+  id: number;
+  name: string;
+  category: string;
+  status: string;
+  size: string;
+  version: string;
+  date: string;
+  dateFull?: string;
+  uploader: string;
+  type: string;
+  fileUrl?: string;
+  desc?: string;
+  tags?: string;
+}
+
 const DATA_FILE = path.join(process.cwd(), "data", "documents.json");
 const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
 
@@ -36,9 +52,9 @@ export async function GET() {
 
     ensureDirsExist();
     const data = fs.readFileSync(DATA_FILE, "utf-8");
-    const documents = JSON.parse(data || "[]");
+    const documents: DocumentItem[] = JSON.parse(data || "[]");
     return NextResponse.json(documents);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch documents" }, { status: 500 });
   }
 }
@@ -105,15 +121,17 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date();
+    const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const dayName = dayNames[now.getDay()];
     const day = now.getDate();
     const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
     const month = months[now.getMonth()];
     const year = now.getFullYear();
     const hours = String(now.getHours()).padStart(2, "0");
     const minutes = String(now.getMinutes()).padStart(2, "0");
-    const realTimeStr = `${day} ${month} ${year}, ${hours}:${minutes} WIB`;
+    const realTimeStr = `${dayName}, ${day} ${month} ${year}, ${hours}:${minutes} WIB`;
 
-    const newDoc = {
+    const newDoc: DocumentItem = {
       id: Date.now(),
       name: fileName,
       category: category,
@@ -141,8 +159,8 @@ export async function POST(req: NextRequest) {
         if (!docErr && docData) {
           // Sync locally as well
           const localData = fs.readFileSync(DATA_FILE, "utf-8");
-          const localDocs = JSON.parse(localData || "[]");
-          localDocs.unshift(docData);
+          const localDocs: DocumentItem[] = JSON.parse(localData || "[]");
+          localDocs.unshift(docData as DocumentItem);
           fs.writeFileSync(DATA_FILE, JSON.stringify(localDocs, null, 2));
 
           return NextResponse.json(docData);
@@ -154,7 +172,7 @@ export async function POST(req: NextRequest) {
 
     // Local JSON Fallback Save
     const data = fs.readFileSync(DATA_FILE, "utf-8");
-    const documents = JSON.parse(data || "[]");
+    const documents: DocumentItem[] = JSON.parse(data || "[]");
     documents.unshift(newDoc);
     fs.writeFileSync(DATA_FILE, JSON.stringify(documents, null, 2));
 
@@ -182,21 +200,21 @@ export async function DELETE(req: NextRequest) {
     }
 
     const data = fs.readFileSync(DATA_FILE, "utf-8");
-    let documents = JSON.parse(data || "[]");
+    let documents: DocumentItem[] = JSON.parse(data || "[]");
 
-    const targetDoc = documents.find((d: any) => d.id === id);
+    const targetDoc = documents.find((d: DocumentItem) => d.id === id);
     if (targetDoc && targetDoc.fileUrl && targetDoc.fileUrl.startsWith("/uploads/")) {
       const filePath = path.join(process.cwd(), "public", targetDoc.fileUrl);
       if (fs.existsSync(filePath)) {
-        try { fs.unlinkSync(filePath); } catch (e) {}
+        try { fs.unlinkSync(filePath); } catch { /* ignore */ }
       }
     }
 
-    documents = documents.filter((d: any) => d.id !== id);
+    documents = documents.filter((d: DocumentItem) => d.id !== id);
     fs.writeFileSync(DATA_FILE, JSON.stringify(documents, null, 2));
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to delete document" }, { status: 500 });
   }
 }

@@ -3,9 +3,16 @@ import fs from "fs";
 import path from "path";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
+export interface CategoryItem {
+  id: number;
+  title: string;
+  desc: string;
+  status: string;
+}
+
 const CATEGORIES_FILE = path.join(process.cwd(), "data", "categories.json");
 
-const DEFAULT_CATEGORIES = [
+const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: 1, title: "Surat Keputusan", desc: "Dokumen keputusan resmi dan penetapan pimpinan.", status: "active" },
   { id: 2, title: "Laporan Keuangan", desc: "Laporan realisasi anggaran, keuangan, dan hasil audit.", status: "active" },
   { id: 3, title: "Kepegawaian", desc: "Berkas kepegawaian, SK jabatan, dan kontrak staf.", status: "active" },
@@ -39,9 +46,9 @@ export async function GET() {
 
     ensureCategoriesExist();
     const data = fs.readFileSync(CATEGORIES_FILE, "utf-8");
-    const categories = JSON.parse(data || "[]");
+    const categories: CategoryItem[] = JSON.parse(data || "[]");
     return NextResponse.json(categories);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 });
   }
 }
@@ -56,7 +63,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
-    const newCategory = {
+    const newCategory: CategoryItem = {
       id: Date.now(),
       title: title.trim(),
       desc: (desc || "Deskripsi kategori dokumen").trim(),
@@ -77,12 +84,12 @@ export async function POST(req: NextRequest) {
 
     ensureCategoriesExist();
     const data = fs.readFileSync(CATEGORIES_FILE, "utf-8");
-    const categories = JSON.parse(data || "[]");
+    const categories: CategoryItem[] = JSON.parse(data || "[]");
     categories.push(newCategory);
     fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(categories, null, 2));
 
     return NextResponse.json(newCategory);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to create category" }, { status: 500 });
   }
 }
@@ -104,12 +111,12 @@ export async function DELETE(req: NextRequest) {
 
     ensureCategoriesExist();
     const data = fs.readFileSync(CATEGORIES_FILE, "utf-8");
-    let categories = JSON.parse(data || "[]");
-    categories = categories.filter((c: any) => c.id !== id);
+    let categories: CategoryItem[] = JSON.parse(data || "[]");
+    categories = categories.filter((c: CategoryItem) => c.id !== id);
     fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(categories, null, 2));
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to delete category" }, { status: 500 });
   }
 }
