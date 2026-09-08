@@ -11,6 +11,7 @@ export interface CategoryItem {
 }
 
 const CATEGORIES_FILE = path.join(process.cwd(), "data", "categories.json");
+const CLOUD_STORAGE_CAT_PATH = "_system/categories.json";
 
 const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: 1, title: "Surat Keputusan", desc: "Dokumen keputusan resmi dan penetapan pimpinan.", status: "active" },
@@ -20,47 +21,96 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: 5, title: "MoU & Perjanjian", desc: "Nota kesepahaman dan perjanjian kerja sama.", status: "active" }
 ];
 
-function ensureCategoriesExist() {
-  try {
-    const dataDir = path.dirname(CATEGORIES_FILE);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    if (!fs.existsSync(CATEGORIES_FILE)) {
-      fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(DEFAULT_CATEGORIES, null, 2));
-    }
-  } catch (err) {
-    console.warn("Categories filesystem warning:", err);
-  }
-}
+async function getCategoriesFromCloud(): Promise<CategoryItem[]> {
+  // 1. Try Supabase Storage
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.storage
+        .from("documents")
+        .download(CLOUD_STORAGE_CAT_PATH);
 
-// GET: Fetch categories from Supabase (or fallback JSON)
-export async function GET() {
-  try {
-    if (isSupabaseConfigured && supabase) {
+      if (!error && data) {
+        const text = await data.text();
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.warn("Supabase Storage categories download notice:", err);
+    }
+
+    // 2. Try Supabase Table (if exists)
+    try {
       const { data, error } = await supabase
         .from("categories")
         .select("*")
         .order("id", { ascending: true });
 
       if (!error && data && data.length > 0) {
-        return NextResponse.json(data);
+        return data;
       }
-    }
+    } catch {}
+  }
 
-    ensureCategoriesExist();
+  // 3. Try Local JSON File
+  try {
     if (fs.existsSync(CATEGORIES_FILE)) {
       const data = fs.readFileSync(CATEGORIES_FILE, "utf-8");
       const categories: CategoryItem[] = JSON.parse(data || "[]");
-      return NextResponse.json(categories.length > 0 ? categories : DEFAULT_CATEGORIES);
+      if (categories.length > 0) return categories;
     }
-    return NextResponse.json(DEFAULT_CATEGORIES);
+  } catch (err) {
+    console.warn("Local categories file read error:", err);
+  }
+
+  return DEFAULT_CATEGORIES;
+}
+
+async function saveCategoriesToCloud(categories: CategoryItem[]): Promise<void> {
+  // 1. Save to Supabase Cloud Storage
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const jsonBuffer = Buffer.from(JSON.stringify(categories, null, 2), "utf-8");
+      await supabase.storage
+        .from("documents")
+        .upload(CLOUD_STORAGE_CAT_PATH, jsonBuffer, {
+          contentType: "application/json",
+          upsert: true
+        });
+    } catch (err) {
+      console.warn("Supabase Storage categories upload error:", err);
+    }
+
+    // 2. Try Supabase Table (if exists)
+    try {
+      await supabase.from("categories").upsert(categories);
+    } catch {}
+  }
+
+  // 3. Save to Local JSON File
+  try {
+    const dataDir = path.dirname(CATEGORIES_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(categories, null, 2));
+  } catch (err) {
+    console.warn("Local categories file write notice:", err);
+  }
+}
+
+// GET: Fetch categories
+export async function GET() {
+  try {
+    const categories = await getCategoriesFromCloud();
+    return NextResponse.json(categories);
   } catch {
     return NextResponse.json(DEFAULT_CATEGORIES);
   }
 }
 
-// POST: Add new category to Supabase (or fallback JSON)
+// POST: Add new category
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -70,6 +120,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
+    const currentCategories = await getCategoriesFromCloud();
+
     const newCategory: CategoryItem = {
       id: Date.now(),
       title: title.trim(),
@@ -77,33 +129,8 @@ export async function POST(req: NextRequest) {
       status: "active"
     };
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from("categories")
-          .insert([newCategory])
-          .select()
-          .single();
-
-        if (!error && data) {
-          return NextResponse.json(data);
-        }
-      } catch (err) {
-        console.warn("Supabase category insert error:", err);
-      }
-    }
-
-    try {
-      ensureCategoriesExist();
-      if (fs.existsSync(CATEGORIES_FILE)) {
-        const data = fs.readFileSync(CATEGORIES_FILE, "utf-8");
-        const categories: CategoryItem[] = JSON.parse(data || "[]");
-        categories.push(newCategory);
-        fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(categories, null, 2));
-      }
-    } catch (fsErr) {
-      console.warn("Read-only filesystem on category add:", fsErr);
-    }
+    const updated = [...currentCategories, newCategory];
+    await saveCategoriesToCloud(updated);
 
     return NextResponse.json(newCategory);
   } catch {
@@ -111,7 +138,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE: Remove category from Supabase (or fallback JSON)
+// DELETE: Remove category
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -121,27 +148,10 @@ export async function DELETE(req: NextRequest) {
     }
 
     const id = parseInt(idStr);
+    const currentCategories = await getCategoriesFromCloud();
+    const updated = currentCategories.filter((c) => c.id !== id);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from("categories").delete().eq("id", id);
-      } catch (err) {
-        console.warn("Supabase category delete error:", err);
-      }
-    }
-
-    try {
-      ensureCategoriesExist();
-      if (fs.existsSync(CATEGORIES_FILE)) {
-        const data = fs.readFileSync(CATEGORIES_FILE, "utf-8");
-        let categories: CategoryItem[] = JSON.parse(data || "[]");
-        categories = categories.filter((c: CategoryItem) => c.id !== id);
-        fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(categories, null, 2));
-      }
-    } catch (fsErr) {
-      console.warn("Read-only filesystem on category delete:", fsErr);
-    }
-
+    await saveCategoriesToCloud(updated);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ success: true });

@@ -15,59 +15,104 @@ export interface StaffItem {
 }
 
 const STAFF_FILE = path.join(process.cwd(), "data", "staff.json");
+const CLOUD_STORAGE_STAFF_PATH = "_system/staff.json";
 
 const DEFAULT_STAFF: StaffItem[] = [
   { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Baru saja", nip: "19850712 201001 1 008", division: "Umum" }
 ];
 
-function ensureStaffExists() {
-  try {
-    const dataDir = path.dirname(STAFF_FILE);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    if (!fs.existsSync(STAFF_FILE)) {
-      fs.writeFileSync(STAFF_FILE, JSON.stringify(DEFAULT_STAFF, null, 2));
-    }
-  } catch (err) {
-    console.warn("Staff filesystem warning:", err);
-  }
-}
+// Helper: Read staff from Cloud Supabase Storage (or local fallback)
+async function getStaffFromCloud(): Promise<StaffItem[]> {
+  // 1. Try Supabase Storage
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.storage
+        .from("documents")
+        .download(CLOUD_STORAGE_STAFF_PATH);
 
-// GET: Fetch staff list from Supabase (or fallback JSON)
-export async function GET() {
-  try {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        // Clean up legacy dummy seed rows (id 2, 3, 4) if present
-        await supabase.from("staff").delete().in("id", [2, 3, 4]);
-      } catch (cleanupErr) {
-        console.warn("Legacy dummy staff cleanup warning:", cleanupErr);
+      if (!error && data) {
+        const text = await data.text();
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
+    } catch (err) {
+      console.warn("Supabase Storage staff download notice:", err);
+    }
 
+    // 2. Try Supabase Table (if table exists)
+    try {
       const { data, error } = await supabase
         .from("staff")
         .select("*")
         .order("id", { ascending: true });
 
       if (!error && data && data.length > 0) {
-        return NextResponse.json(data);
+        return data;
       }
-    }
+    } catch {}
+  }
 
-    ensureStaffExists();
+  // 3. Try Local JSON File
+  try {
     if (fs.existsSync(STAFF_FILE)) {
       const data = fs.readFileSync(STAFF_FILE, "utf-8");
       const staff: StaffItem[] = JSON.parse(data || "[]");
-      return NextResponse.json(staff.length > 0 ? staff : DEFAULT_STAFF);
+      if (staff.length > 0) return staff;
     }
-    return NextResponse.json(DEFAULT_STAFF);
+  } catch (err) {
+    console.warn("Local staff file read error:", err);
+  }
+
+  return DEFAULT_STAFF;
+}
+
+// Helper: Save staff list to Cloud Supabase Storage (and local fallback)
+async function saveStaffToCloud(staffList: StaffItem[]): Promise<void> {
+  // 1. Save to Supabase Cloud Storage
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const jsonBuffer = Buffer.from(JSON.stringify(staffList, null, 2), "utf-8");
+      await supabase.storage
+        .from("documents")
+        .upload(CLOUD_STORAGE_STAFF_PATH, jsonBuffer, {
+          contentType: "application/json",
+          upsert: true
+        });
+    } catch (err) {
+      console.warn("Supabase Storage staff upload error:", err);
+    }
+
+    // 2. Try Supabase Table (if exists)
+    try {
+      await supabase.from("staff").upsert(staffList);
+    } catch {}
+  }
+
+  // 3. Save to Local JSON File
+  try {
+    const dataDir = path.dirname(STAFF_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.writeFileSync(STAFF_FILE, JSON.stringify(staffList, null, 2));
+  } catch (err) {
+    console.warn("Local staff file write notice:", err);
+  }
+}
+
+// GET: Fetch staff list
+export async function GET() {
+  try {
+    const staffList = await getStaffFromCloud();
+    return NextResponse.json(staffList);
   } catch {
     return NextResponse.json(DEFAULT_STAFF);
   }
 }
 
-// POST: Add new staff member to Supabase (or fallback JSON)
+// POST: Add new staff member
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -76,6 +121,8 @@ export async function POST(req: NextRequest) {
     if (!name || !email) {
       return NextResponse.json({ error: "Name and Email are required" }, { status: 400 });
     }
+
+    const currentStaffList = await getStaffFromCloud();
 
     const newStaff: StaffItem = {
       id: Date.now(),
@@ -88,33 +135,8 @@ export async function POST(req: NextRequest) {
       division: division || "Umum"
     };
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from("staff")
-          .insert([newStaff])
-          .select()
-          .single();
-
-        if (!error && data) {
-          return NextResponse.json(data);
-        }
-      } catch (err) {
-        console.warn("Supabase staff insert error:", err);
-      }
-    }
-
-    try {
-      ensureStaffExists();
-      if (fs.existsSync(STAFF_FILE)) {
-        const data = fs.readFileSync(STAFF_FILE, "utf-8");
-        const staff: StaffItem[] = JSON.parse(data || "[]");
-        staff.push(newStaff);
-        fs.writeFileSync(STAFF_FILE, JSON.stringify(staff, null, 2));
-      }
-    } catch (fsErr) {
-      console.warn("Read-only filesystem on staff add:", fsErr);
-    }
+    const updatedList = [...currentStaffList, newStaff];
+    await saveStaffToCloud(updatedList);
 
     return NextResponse.json(newStaff);
   } catch {
@@ -122,7 +144,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH: Update staff status on Supabase (or fallback JSON)
+// PATCH: Update staff status
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
@@ -132,47 +154,22 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Missing staff ID" }, { status: 400 });
     }
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase
-          .from("staff")
-          .update({ status: "Active" }) // fallback
-          .eq("id", id);
-      } catch (err) {
-        console.warn("Supabase staff update error:", err);
-      }
-    }
+    const currentStaffList = await getStaffFromCloud();
+    const target = currentStaffList.find((s) => s.id === id);
+    const newStatus = target && target.status === "Active" ? "Suspended" : "Active";
 
-    try {
-      ensureStaffExists();
-      if (fs.existsSync(STAFF_FILE)) {
-        const localData = fs.readFileSync(STAFF_FILE, "utf-8");
-        let localStaffList: StaffItem[] = JSON.parse(localData || "[]");
+    const updatedList = currentStaffList.map((s) =>
+      s.id === id ? { ...s, status: newStatus } : s
+    );
 
-        const target = localStaffList.find((s: StaffItem) => s.id === id);
-        const newStatus = target && target.status === "Active" ? "Suspended" : "Active";
-
-        localStaffList = localStaffList.map((s: StaffItem) => {
-          if (s.id === id) {
-            return { ...s, status: newStatus };
-          }
-          return s;
-        });
-
-        fs.writeFileSync(STAFF_FILE, JSON.stringify(localStaffList, null, 2));
-        return NextResponse.json({ success: true, staff: localStaffList });
-      }
-    } catch (fsErr) {
-      console.warn("Read-only filesystem on staff patch:", fsErr);
-    }
-
-    return NextResponse.json({ success: true });
+    await saveStaffToCloud(updatedList);
+    return NextResponse.json({ success: true, staff: updatedList });
   } catch {
     return NextResponse.json({ error: "Failed to update staff" }, { status: 500 });
   }
 }
 
-// DELETE: Remove a staff member from Supabase & fallback JSON
+// DELETE: Remove a staff member
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -182,29 +179,12 @@ export async function DELETE(req: NextRequest) {
     }
     const id = Number(idParam);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from("staff").delete().eq("id", id);
-      } catch (sbErr) {
-        console.warn("Supabase staff delete error:", sbErr);
-      }
-    }
+    const currentStaffList = await getStaffFromCloud();
+    const updatedList = currentStaffList.filter((s) => s.id !== id);
 
-    try {
-      ensureStaffExists();
-      if (fs.existsSync(STAFF_FILE)) {
-        const data = fs.readFileSync(STAFF_FILE, "utf-8");
-        let staffList: StaffItem[] = JSON.parse(data || "[]");
-        staffList = staffList.filter((s: StaffItem) => s.id !== id);
-        fs.writeFileSync(STAFF_FILE, JSON.stringify(staffList, null, 2));
-      }
-    } catch (fsErr) {
-      console.warn("Read-only filesystem on staff delete:", fsErr);
-    }
-
+    await saveStaffToCloud(updatedList);
     return NextResponse.json({ success: true, message: "Staff removed successfully" });
   } catch {
     return NextResponse.json({ error: "Failed to delete staff" }, { status: 500 });
   }
 }
-

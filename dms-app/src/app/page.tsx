@@ -157,6 +157,9 @@ export default function DMSApp() {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setCategories(data);
+          try {
+            localStorage.setItem("dms_categories_data", JSON.stringify(data));
+          } catch {}
         }
       }
     } catch (e) {
@@ -172,6 +175,9 @@ export default function DMSApp() {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setStaff(data);
+          try {
+            localStorage.setItem("dms_staff_data", JSON.stringify(data));
+          } catch {}
         }
       }
     } catch (e) {
@@ -187,6 +193,27 @@ export default function DMSApp() {
     } else if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
       setDarkMode(true);
     }
+
+    try {
+      const cachedStaff = localStorage.getItem("dms_staff_data");
+      if (cachedStaff) {
+        const parsed = JSON.parse(cachedStaff);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setStaff(parsed);
+        }
+      }
+    } catch {}
+
+    try {
+      const cachedCategories = localStorage.getItem("dms_categories_data");
+      if (cachedCategories) {
+        const parsed = JSON.parse(cachedCategories);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCategories(parsed);
+        }
+      }
+    } catch {}
+
     loadSharedDocuments();
     loadCategories();
     loadStaff();
@@ -354,12 +381,14 @@ export default function DMSApp() {
         body: JSON.stringify({ id, action: "toggle-status" })
       });
       if (res.ok) {
-        setStaff((prev) =>
-          prev.map((s) =>
+        setStaff((prev) => {
+          const updated = prev.map((s) =>
             s.id === id ? { ...s, status: s.status === "Active" ? "Suspended" : "Active" } : s
-          )
-        );
-        showToastMsg("Status akun staf berhasil diperbarui di server.");
+          );
+          try { localStorage.setItem("dms_staff_data", JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+        showToastMsg("Status akun staf berhasil diperbarui di cloud server.");
       }
     } catch {
       showToastMsg("Gagal memperbarui status staf.", "error");
@@ -384,12 +413,17 @@ export default function DMSApp() {
       return;
     }
 
-    setStaff((prev) => prev.filter((s) => s.id !== id));
+    setStaff((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      try { localStorage.setItem("dms_staff_data", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     setStaffToDelete(null);
     showToastMsg(`Akun staf "${target?.name || "Staf"}" berhasil dihapus secara permanen.`, "success");
 
     try {
       await fetch(`/api/staff?id=${id}`, { method: "DELETE" });
+      await loadStaff();
     } catch (err) {
       console.warn("Server staff DELETE sync notice:", err);
     }
@@ -2402,9 +2436,14 @@ export default function DMSApp() {
                 });
                 if (res.ok) {
                   const newCat = await res.json();
-                  setCategories((prev) => [...prev, newCat]);
+                  setCategories((prev) => {
+                    const nextCats = [...prev, newCat];
+                    try { localStorage.setItem("dms_categories_data", JSON.stringify(nextCats)); } catch {}
+                    return nextCats;
+                  });
                   setShowAddCategoryModal(false);
-                  showToastMsg(`Kategori "${title}" berhasil disimpan di server!`, "success");
+                  showToastMsg(`Kategori "${title}" berhasil disimpan di cloud server!`, "success");
+                  await loadCategories();
                 }
               } catch {
                 showToastMsg("Gagal menyimpan kategori ke server.", "error");
@@ -2429,7 +2468,7 @@ export default function DMSApp() {
                 </div>
               </div>
 
-              <div className="modal-footer" style={{ padding: "16px 24px", background: "var(--bg-body)", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+              <div className="modal-footer" style={{ padding: "16px 24px", background: "var(--bg-body)", borderTop: "1px solid var(--border-color)", display: "flex", justifySelf: "flex-end", gap: "12px" }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowAddCategoryModal(false)} style={{ padding: "9px 20px", fontWeight: 600 }}>Batal</button>
                 <button type="submit" className="btn-primary-block" style={{ width: "auto", padding: "9px 24px", margin: 0, background: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)", boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)", fontWeight: 600 }}>
                   Simpan Kategori Baru
@@ -2478,9 +2517,14 @@ export default function DMSApp() {
                 });
                 if (res.ok) {
                   const newStaff = await res.json();
-                  setStaff((prev) => [...prev, newStaff]);
+                  setStaff((prev) => {
+                    const nextStaff = [...prev, newStaff];
+                    try { localStorage.setItem("dms_staff_data", JSON.stringify(nextStaff)); } catch {}
+                    return nextStaff;
+                  });
                   setShowAddStaffModal(false);
-                  showToastMsg(`Staf "${name}" berhasil didaftarkan di server!`, "success");
+                  showToastMsg(`Staf "${name}" berhasil didaftarkan di cloud server!`, "success");
+                  await loadStaff();
                 }
               } catch {
                 showToastMsg("Gagal mendaftarkan staf ke server.", "error");
