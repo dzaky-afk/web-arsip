@@ -118,6 +118,35 @@ body {
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.25s ease, color 0.25s ease;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* SETDA GUNUNGKIDUL REPEATING WATERMARK BACKGROUND PATTERN */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("/logo-gunungkidul.png");
+  background-repeat: repeat;
+  background-size: 72px 72px;
+  background-position: 0 0;
+  opacity: 0.055;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.dark-mode::before {
+  opacity: 0.038;
+  filter: brightness(1.2) contrast(1.1);
+}
+
+#app {
+  position: relative;
+  z-index: 1;
 }
 
 /* LOGIN VIEW STYLES */
@@ -127,15 +156,16 @@ body {
   justify-content: center;
   min-height: 100vh;
   width: 100%;
-  background: radial-gradient(circle at 50% 20%, #eff6ff 0%, #f8fafc 70%);
+  background: radial-gradient(circle at 50% 20%, rgba(239, 246, 255, 0.85) 0%, rgba(248, 250, 252, 0.92) 70%);
   position: relative;
   overflow: hidden;
   padding: 20px;
   transition: background 0.3s ease;
+  z-index: 1;
 }
 
 body.dark-mode .login-wrapper {
-  background: radial-gradient(circle at 50% 20%, #172554 0%, #0b0f19 75%);
+  background: radial-gradient(circle at 50% 20%, rgba(23, 37, 84, 0.88) 0%, rgba(11, 15, 25, 0.94) 75%);
 }
 
 .login-backdrop-decor {
