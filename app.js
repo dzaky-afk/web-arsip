@@ -1,9 +1,21 @@
 /**
  * Setda Bagian Umum - Document Management System (DMS) Admin Panel
- * Static HTML Application Logic
+ * Static HTML Application Logic with Supabase Cloud Sync
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  const SUPABASE_URL = 'https://prrhpwpqyzrkaxvdldhx.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_lVsrxJTxIabzdowd1VCYpA_Bxq0q9pS';
+  let supabaseClient = null;
+
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch (e) {
+      console.warn('Supabase JS init error:', e);
+    }
+  }
+
   const state = {
     currentView: 'dashboard',
     darkMode: false,
@@ -33,6 +45,36 @@ document.addEventListener('DOMContentLoaded', () => {
     yearFilter: 'all',
     typeFilter: 'all'
   };
+
+  async function fetchCloudDocuments() {
+    if (!supabaseClient) return;
+    try {
+      const { data, error } = await supabaseClient.from('documents').select('*').order('id', { ascending: false });
+      if (!error && Array.isArray(data) && data.length > 0) {
+        state.documents = data;
+        renderDashboardTable();
+        renderAllDocumentsTable();
+        renderCategoriesGrid();
+      }
+    } catch (err) {
+      console.warn('Error fetching cloud documents in static mode:', err);
+    }
+  }
+
+  // Load from Supabase on start
+  fetchCloudDocuments();
+  window.addEventListener('focus', fetchCloudDocuments);
+  setInterval(fetchCloudDocuments, 8000);
+
+  if (supabaseClient) {
+    try {
+      supabaseClient.channel('static-realtime-docs').on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => {
+        fetchCloudDocuments();
+      }).subscribe();
+    } catch (e) {
+      console.warn('Realtime subscribe warning:', e);
+    }
+  }
 
   const loginView = document.getElementById('login-view');
   const appView = document.getElementById('app-view');
@@ -587,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
         uploader: state.user.name,
         type: ['pdf', 'docx', 'xlsx'].includes(ext) ? ext : 'pdf',
         desc: descInput ? descInput.value : '',
-        status: 'Disetujui'
+        status: 'Approved'
       };
 
       state.documents.unshift(newDoc);
@@ -596,6 +638,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (dropzonePreview) dropzonePreview.style.display = 'none';
       switchView('all-documents');
       showToast(`Dokumen "${newDoc.name}" berhasil diunggah!`, 'success');
+
+      if (supabaseClient) {
+        supabaseClient.from('documents').insert([newDoc]).then(({ error }) => {
+          if (error) console.warn('Supabase document insert notice:', error);
+        });
+      }
     });
   }
 
@@ -611,6 +659,12 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAllDocumentsTable();
     renderCategoriesGrid();
     showToast('Dokumen berhasil dihapus dari server!', 'info');
+
+    if (supabaseClient) {
+      supabaseClient.from('documents').delete().eq('id', id).then(({ error }) => {
+        if (error) console.warn('Supabase document delete notice:', error);
+      });
+    }
   };
 
   // Document Viewer Modal Trigger

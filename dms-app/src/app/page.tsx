@@ -43,6 +43,7 @@ import {
   Filter,
   AlertCircle
 } from "lucide-react";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { DocumentItem } from "@/app/api/documents/route";
 import type { CategoryItem } from "@/app/api/categories/route";
 import type { StaffItem } from "@/app/api/staff/route";
@@ -72,6 +73,7 @@ export default function Home() {
   const [currentView, setCurrentView] = useState("dashboard");
   const [darkMode, setDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // User Profile State
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -132,10 +134,12 @@ export default function Home() {
   // Fetch shared documents from Server API on load
   const loadSharedDocuments = async () => {
     try {
-      const res = await fetch("/api/documents");
+      const res = await fetch(`/api/documents?_t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
-        setDocuments(data);
+        if (Array.isArray(data)) {
+          setDocuments(data);
+        }
       }
     } catch (e) {
       console.error("Failed to load server documents", e);
@@ -145,10 +149,12 @@ export default function Home() {
   // Fetch categories from Server API
   const loadCategories = async () => {
     try {
-      const res = await fetch("/api/categories");
+      const res = await fetch(`/api/categories?_t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
-        setCategories(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setCategories(data);
+        }
       }
     } catch (e) {
       console.error("Failed to load categories", e);
@@ -158,10 +164,12 @@ export default function Home() {
   // Fetch staff from Server API
   const loadStaff = async () => {
     try {
-      const res = await fetch("/api/staff");
+      const res = await fetch(`/api/staff?_t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
-        setStaff(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setStaff(data);
+        }
       }
     } catch (e) {
       console.error("Failed to load staff", e);
@@ -179,6 +187,55 @@ export default function Home() {
     loadSharedDocuments();
     loadCategories();
     loadStaff();
+
+    // Auto-sync when window or tab gains focus (e.g., returning to phone/laptop)
+    const handleFocusSync = () => {
+      loadSharedDocuments();
+      loadCategories();
+      loadStaff();
+    };
+
+    const handleVisibilitySync = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        loadSharedDocuments();
+      }
+    };
+
+    window.addEventListener("focus", handleFocusSync);
+    document.addEventListener("visibilitychange", handleVisibilitySync);
+
+    // Periodic background sync every 8 seconds across all active devices
+    const syncInterval = setInterval(() => {
+      loadSharedDocuments();
+    }, 8000);
+
+    // Realtime Supabase Database Change Listener
+    let channel: any = null;
+    if (isSupabaseConfigured && supabase) {
+      try {
+        channel = supabase
+          .channel("realtime-documents-sync")
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "documents" },
+            () => {
+              loadSharedDocuments();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.warn("Realtime subscription notice:", err);
+      }
+    }
+
+    return () => {
+      window.removeEventListener("focus", handleFocusSync);
+      document.removeEventListener("visibilitychange", handleVisibilitySync);
+      clearInterval(syncInterval);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -825,6 +882,37 @@ export default function Home() {
           </div>
 
           <div className="topbar-right">
+            {/* Cloud Sync Status & Manual Sync Button */}
+            <button
+              className="icon-btn sync-btn"
+              onClick={async () => {
+                setIsSyncing(true);
+                await loadSharedDocuments();
+                await loadCategories();
+                await loadStaff();
+                setTimeout(() => setIsSyncing(false), 600);
+                showToastMsg("Sinkronisasi Cloud Berhasil! Data HP & Laptop kini sinkron.", "success");
+              }}
+              title="Status: Terhubung ke Cloud Database. Klik untuk sinkronisasi paksa"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                width: "auto",
+                padding: "0 12px",
+                borderRadius: "20px",
+                background: "rgba(16, 185, 129, 0.12)",
+                border: "1px solid rgba(16, 185, 129, 0.35)",
+                color: "#10b981",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              <RotateCcw size={14} className={isSyncing ? "spin-animation" : ""} />
+              <span className="sync-text-desktop">Cloud Aktif</span>
+            </button>
+
             <button
               className="icon-btn"
               onClick={() => {

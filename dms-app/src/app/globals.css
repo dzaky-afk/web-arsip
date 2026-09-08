@@ -2648,3 +2648,31 @@ body.dark-mode .delete-warning-banner {
   transform: translateY(1px);
   box-shadow: 0 3px 10px -2px rgba(239, 68, 68, 0.4);
 }
+
+/* Cloud Sync Button & Spin Animation */
+@keyframes spin-cw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-animation {
+  animation: spin-cw 0.8s linear infinite;
+}
+
+.sync-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sync-btn:hover {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .sync-text-desktop {
+    display: none;
+  }
+}
