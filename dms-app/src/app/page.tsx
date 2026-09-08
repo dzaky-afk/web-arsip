@@ -59,10 +59,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const CURRENT_USER_STAFF = [
-  { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Just now", nip: "19850712 201001 1 008", division: "Umum" },
-  { id: 2, name: "Ahmad Fauzi", email: "ahmad.f@setda.gov.id", role: "Staff", status: "Active", lastActive: "2 hours ago", nip: "19900815 201402 1 005", division: "Umum" },
-  { id: 3, name: "Siti Nurhaliza", email: "siti.n@setda.gov.id", role: "Viewer", status: "Active", lastActive: "Yesterday", nip: "19951210 201901 2 001", division: "Umum" },
-  { id: 4, name: "Hendra Wijaya", email: "hendra.w@setda.gov.id", role: "Staff", status: "Active", lastActive: "3 days ago", nip: "19910324 201503 2 002", division: "Protokol" }
+  { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Baru saja", nip: "19850712 201001 1 008", division: "Umum" }
 ];
 
 export default function DMSApp() {
@@ -865,11 +862,10 @@ export default function DMSApp() {
 
           <div className="login-demo-helper" style={{ marginTop: "20px", padding: "12px", background: "var(--primary-light)", border: "1px solid var(--primary-border)", borderRadius: "var(--radius-md)", fontSize: "11.5px", textAlign: "left", color: "var(--text-main)" }}>
             <div style={{ fontWeight: 700, color: "var(--primary)", marginBottom: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
-              ℹ️ Info Uji Coba Login NIP
+              ℹ️ Info Login NIP Pegawai
             </div>
-            <div><strong>Staf Bagian Umum:</strong> 19850712 201001 1 008</div>
-            <div><strong>Staf Bagian Lain (Protokol):</strong> 19910324 201503 2 002</div>
-            <div style={{ marginTop: "4px", fontSize: "10.5px", color: "var(--text-muted)" }}>* Sistem akan mendeteksi Bagian/Unit Kerja secara otomatis berdasarkan NIP. Hanya Staf Bagian Umum yang diberikan izin masuk.</div>
+            <div><strong>Master Admin Bagian Umum:</strong> 19850712 201001 1 008</div>
+            <div style={{ marginTop: "4px", fontSize: "11px", color: "var(--text-muted)" }}>* Anda juga dapat login dengan NIP staf asli yang Anda daftarkan melalui menu <em>User & System Management</em>.</div>
           </div>
         </div>
       </div>

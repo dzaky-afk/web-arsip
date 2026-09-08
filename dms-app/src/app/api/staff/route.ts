@@ -17,10 +17,7 @@ export interface StaffItem {
 const STAFF_FILE = path.join(process.cwd(), "data", "staff.json");
 
 const DEFAULT_STAFF: StaffItem[] = [
-  { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Just now", nip: "19850712 201001 1 008", division: "Umum" },
-  { id: 2, name: "Ahmad Fauzi", email: "ahmad.f@setda.gov.id", role: "Staff", status: "Active", lastActive: "2 hours ago", nip: "19900815 201402 1 005", division: "Umum" },
-  { id: 3, name: "Siti Nurhaliza", email: "siti.n@setda.gov.id", role: "Viewer", status: "Active", lastActive: "Yesterday", nip: "19951210 201901 2 001", division: "Umum" },
-  { id: 4, name: "Hendra Wijaya", email: "hendra.w@setda.gov.id", role: "Staff", status: "Active", lastActive: "3 days ago", nip: "19910324 201503 2 002", division: "Protokol" }
+  { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Baru saja", nip: "19850712 201001 1 008", division: "Umum" }
 ];
 
 function ensureStaffExists() {
@@ -41,6 +38,13 @@ function ensureStaffExists() {
 export async function GET() {
   try {
     if (isSupabaseConfigured && supabase) {
+      try {
+        // Clean up legacy dummy seed rows (id 2, 3, 4) if present
+        await supabase.from("staff").delete().in("id", [2, 3, 4]);
+      } catch (cleanupErr) {
+        console.warn("Legacy dummy staff cleanup warning:", cleanupErr);
+      }
+
       const { data, error } = await supabase
         .from("staff")
         .select("*")
