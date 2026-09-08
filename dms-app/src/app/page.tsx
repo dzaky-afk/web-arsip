@@ -591,7 +591,68 @@ export default function Home() {
     showToastMsg("File CSV berhasil diunduh!", "success");
   };
 
-  // Helper to parse document date reliably
+  // Helper to extract document date as YYYY-MM-DD local date string
+  const getDocDateString = (doc: DocumentItem): string => {
+    // 1. Parse dateFull (ISO 8601 string)
+    if (doc.dateFull) {
+      const d = new Date(doc.dateFull);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+    }
+
+    // 2. Parse from doc.date text (e.g. "Senin, 7 Sep 2026, 08:10 WIB" or "07 Sep 2026")
+    if (doc.date) {
+      const monthMap: Record<string, string> = {
+        jan: "01", januari: "01",
+        feb: "02", februari: "02",
+        mar: "03", maret: "03",
+        apr: "04", april: "04",
+        mei: "05", may: "05",
+        jun: "06", juni: "06",
+        jul: "07", juli: "07",
+        agu: "08", agustus: "08", aug: "08",
+        sep: "09", september: "09",
+        okt: "10", oktober: "10", oct: "10",
+        nov: "11", november: "11",
+        des: "12", desember: "12", dec: "12"
+      };
+
+      const textMatch = doc.date.toLowerCase().match(/(\d{1,2})\s+([a-z]+)\s+(\d{4})/);
+      if (textMatch) {
+        const day = textMatch[1].padStart(2, "0");
+        const monthStr = textMatch[2];
+        const year = textMatch[3];
+        const monthNum = monthMap[monthStr] || monthMap[monthStr.slice(0, 3)];
+        if (monthNum) {
+          return `${year}-${monthNum}-${day}`;
+        }
+      }
+
+      const isoMatch = doc.date.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (isoMatch) {
+        return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+      }
+    }
+
+    // 3. Parse from doc.id timestamp
+    if (typeof doc.id === "number" && doc.id > 1000000000000) {
+      const d = new Date(doc.id);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+    }
+
+    return "";
+  };
+
+  // Helper to get Date object from doc
   const getDocumentDateObj = (doc: DocumentItem): Date => {
     if (doc.dateFull) {
       const d = new Date(doc.dateFull);
@@ -601,15 +662,22 @@ export default function Home() {
       const d = new Date(doc.id);
       if (!isNaN(d.getTime())) return d;
     }
+    const dateStr = getDocDateString(doc);
+    if (dateStr) {
+      const parts = dateStr.split("-");
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
     return new Date();
   };
 
-  const isSameDay = (d1: Date, d2: Date) => {
-    return (
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
+  // Helper to format YYYY-MM-DD to Indonesian string for display
+  const formatIndoDate = (isoStr: string) => {
+    if (!isoStr) return "";
+    const parts = isoStr.split("-");
+    if (parts.length !== 3) return isoStr;
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    const monthIdx = parseInt(parts[1], 10) - 1;
+    return `${parseInt(parts[2], 10)} ${months[monthIdx] || parts[1]} ${parts[0]}`;
   };
 
   const filteredDocuments = documents.filter((doc) => {
@@ -621,39 +689,37 @@ export default function Home() {
 
     // 3. Date Preset & Range Filter
     if (dateFilterPreset !== "all") {
-      const docDate = getDocumentDateObj(doc);
+      const docDateStr = getDocDateString(doc);
       const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
       if (dateFilterPreset === "today") {
-        if (!isSameDay(docDate, now)) return false;
+        if (docDateStr !== todayStr) return false;
       } else if (dateFilterPreset === "yesterday") {
-        const yesterday = new Date(now);
-        yesterday.setDate(now.getDate() - 1);
-        if (!isSameDay(docDate, yesterday)) return false;
+        const yest = new Date(now);
+        yest.setDate(now.getDate() - 1);
+        const yesterdayStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, "0")}-${String(yest.getDate()).padStart(2, "0")}`;
+        if (docDateStr !== yesterdayStr) return false;
       } else if (dateFilterPreset === "7days") {
         const sevenDaysAgo = new Date(now);
         sevenDaysAgo.setDate(now.getDate() - 7);
-        sevenDaysAgo.setHours(0, 0, 0, 0);
-        if (docDate < sevenDaysAgo) return false;
+        const sevenDaysAgoStr = `${sevenDaysAgo.getFullYear()}-${String(sevenDaysAgo.getMonth() + 1).padStart(2, "0")}-${String(sevenDaysAgo.getDate()).padStart(2, "0")}`;
+        if (docDateStr < sevenDaysAgoStr || docDateStr > todayStr) return false;
       } else if (dateFilterPreset === "30days") {
         const thirtyDaysAgo = new Date(now);
         thirtyDaysAgo.setDate(now.getDate() - 30);
-        thirtyDaysAgo.setHours(0, 0, 0, 0);
-        if (docDate < thirtyDaysAgo) return false;
+        const thirtyDaysAgoStr = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(2, "0")}-${String(thirtyDaysAgo.getDate()).padStart(2, "0")}`;
+        if (docDateStr < thirtyDaysAgoStr || docDateStr > todayStr) return false;
       } else if (dateFilterPreset === "thisMonth") {
-        if (docDate.getFullYear() !== now.getFullYear() || docDate.getMonth() !== now.getMonth()) {
-          return false;
-        }
+        const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        if (!docDateStr.startsWith(currentYearMonth)) return false;
       } else if (dateFilterPreset === "custom") {
-        if (customStartDate) {
-          const start = new Date(customStartDate);
-          start.setHours(0, 0, 0, 0);
-          if (docDate < start) return false;
-        }
-        if (customEndDate) {
-          const end = new Date(customEndDate);
-          end.setHours(23, 59, 59, 999);
-          if (docDate > end) return false;
+        if (customStartDate && !customEndDate) {
+          // Exact single date filter
+          if (docDateStr !== customStartDate) return false;
+        } else if (customStartDate && customEndDate) {
+          // Date range filter
+          if (docDateStr < customStartDate || docDateStr > customEndDate) return false;
         }
       }
     }
@@ -1297,6 +1363,17 @@ export default function Home() {
                   </button>
                   <button
                     type="button"
+                    className={`simple-date-btn ${dateFilterPreset === "yesterday" ? "active" : ""}`}
+                    onClick={() => {
+                      setDateFilterPreset("yesterday");
+                      setCustomStartDate("");
+                      setCustomEndDate("");
+                    }}
+                  >
+                    Kemarin
+                  </button>
+                  <button
+                    type="button"
                     className={`simple-date-btn ${dateFilterPreset === "thisMonth" ? "active" : ""}`}
                     onClick={() => {
                       setDateFilterPreset("thisMonth");
@@ -1316,9 +1393,10 @@ export default function Home() {
                       className="simple-date-input"
                       value={customStartDate}
                       onChange={(e) => {
-                        setCustomStartDate(e.target.value);
+                        const val = e.target.value;
+                        setCustomStartDate(val);
                         setCustomEndDate("");
-                        setDateFilterPreset(e.target.value ? "custom" : "all");
+                        setDateFilterPreset(val ? "custom" : "all");
                       }}
                     />
                     {customStartDate && (
@@ -1349,7 +1427,7 @@ export default function Home() {
                       {dateFilterPreset === "yesterday" && " • Diunggah Kemarin"}
                       {dateFilterPreset === "7days" && " • 7 Hari Terakhir"}
                       {dateFilterPreset === "thisMonth" && " • Bulan Ini"}
-                      {dateFilterPreset === "custom" && customStartDate && ` • Tanggal ${customStartDate} ${customEndDate ? 's/d ' + customEndDate : ''}`}
+                      {dateFilterPreset === "custom" && customStartDate && ` • Tanggal: ${formatIndoDate(customStartDate)} ${customEndDate ? 's/d ' + formatIndoDate(customEndDate) : ''}`}
                       {catFilter !== "all" && ` • Kategori: ${catFilter}`}
                       {typeFilter !== "all" && ` • Format: ${typeFilter.toUpperCase()}`}
                       {searchQuery && ` • Kata Kunci: "${searchQuery}"`}
