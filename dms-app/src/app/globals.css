@@ -122,7 +122,7 @@ body {
   min-height: 100vh;
 }
 
-/* SETDA GUNUNGKIDUL DIAGONAL WATERMARK BACKGROUND PATTERN */
+/* SETDA GUNUNGKIDUL ROYAL STAGGERED WATERMARK BACKGROUND PATTERN */
 body::before {
   content: "";
   position: fixed;
@@ -132,18 +132,18 @@ body::before {
   height: 200%;
   background-image: url("/watermark-pattern.svg");
   background-repeat: repeat;
-  background-size: 140px 140px;
+  background-size: 160px 160px;
   background-position: center;
   transform: rotate(-22deg);
-  opacity: 0.22;
-  filter: contrast(1.15) saturate(1.1);
+  opacity: 0.17;
+  filter: contrast(1.15) saturate(1.15);
   pointer-events: none;
   z-index: 0;
 }
 
 body.dark-mode::before {
-  opacity: 0.18;
-  filter: brightness(1.75) contrast(1.3) saturate(1.2);
+  opacity: 0.14;
+  filter: brightness(1.7) contrast(1.3) saturate(1.2);
 }
 
 #app {
@@ -320,7 +320,9 @@ body.dark-mode .login-backdrop-decor {
 /* SIDEBAR STYLES */
 .sidebar {
   width: var(--sidebar-width);
-  background: var(--bg-sidebar);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -330,6 +332,10 @@ body.dark-mode .login-backdrop-decor {
   top: 0;
   z-index: 100;
   transition: transform 0.3s ease, background 0.3s ease;
+}
+
+body.dark-mode .sidebar {
+  background: rgba(17, 24, 39, 0.94);
 }
 
 .sidebar-header {
@@ -456,7 +462,9 @@ body.dark-mode .login-backdrop-decor {
 /* HEADER TOPBAR */
 .topbar {
   height: var(--header-height);
-  background: var(--bg-header);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -466,6 +474,10 @@ body.dark-mode .login-backdrop-decor {
   top: 0;
   z-index: 90;
   transition: background 0.3s ease;
+}
+
+body.dark-mode .topbar {
+  background: rgba(17, 24, 39, 0.90);
 }
 
 .topbar-left {
@@ -714,17 +726,30 @@ body.dark-mode .login-backdrop-decor {
 }
 
 .stat-card {
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 20px 22px;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -4px rgba(37, 99, 235, 0.12);
+  border-color: var(--primary-border);
+}
+
+body.dark-mode .stat-card {
+  background: rgba(17, 24, 39, 0.92);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .stat-card:hover {
+  box-shadow: 0 10px 25px -4px rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 .stat-header {
@@ -824,11 +849,19 @@ body.dark-mode .login-backdrop-decor {
 }
 
 .card {
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
   overflow: hidden;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+body.dark-mode .card {
+  background: rgba(17, 24, 39, 0.92);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4);
 }
 
 .card-header {
@@ -883,12 +916,16 @@ body.dark-mode .login-backdrop-decor {
 }
 
 .data-table tbody tr {
-  transition: background 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 
 .data-table tbody tr:hover {
-  background: var(--border-light);
+  background: rgba(37, 99, 235, 0.04);
+}
+
+body.dark-mode .data-table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.08);
 }
 
 .file-name-cell {
@@ -899,51 +936,53 @@ body.dark-mode .login-backdrop-decor {
 }
 
 .file-type-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .file-type-icon.pdf {
-  background: #fef2f2;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
   color: #dc2626;
-  border: 1px solid #fee2e2;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .file-type-icon.docx {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #dbeafe;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.3);
 }
 
 .file-type-icon.xlsx {
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #d1fae5;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 body.dark-mode .file-type-icon.pdf {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.18);
   color: #f87171;
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.35);
 }
 
 body.dark-mode .file-type-icon.docx {
-  background: rgba(37, 99, 235, 0.15);
+  background: rgba(37, 99, 235, 0.18);
   color: #60a5fa;
-  border-color: rgba(37, 99, 235, 0.3);
+  border-color: rgba(37, 99, 235, 0.35);
 }
 
 body.dark-mode .file-type-icon.xlsx {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.18);
   color: #34d399;
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 
 .file-meta {
