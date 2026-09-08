@@ -122,26 +122,27 @@ body {
   min-height: 100vh;
 }
 
-/* SETDA GUNUNGKIDUL REPEATING WATERMARK BACKGROUND PATTERN */
+/* SETDA GUNUNGKIDUL DIAGONAL WATERMARK BACKGROUND PATTERN */
 body::before {
   content: "";
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: url("/logo-gunungkidul.png");
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("/watermark-pattern.svg");
   background-repeat: repeat;
-  background-size: 72px 72px;
-  background-position: 0 0;
-  opacity: 0.055;
+  background-size: 220px 220px;
+  background-position: center;
+  transform: rotate(-22deg);
+  opacity: 0.085;
   pointer-events: none;
   z-index: 0;
 }
 
 body.dark-mode::before {
-  opacity: 0.038;
-  filter: brightness(1.2) contrast(1.1);
+  opacity: 0.055;
+  filter: brightness(1.25) contrast(1.15);
 }
 
 #app {
