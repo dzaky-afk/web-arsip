@@ -882,15 +882,19 @@ body.dark-mode .login-wrapper {
 }
 
 .badge-approval {
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
-.badge-approval.approved { background: var(--success-bg); color: var(--success-text); }
-.badge-approval.pending { background: var(--warning-bg); color: var(--warning-text); }
-.badge-approval.draft { background: var(--border-light); color: var(--text-muted); }
+.badge-approval.approved { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-approval.pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge-approval.draft { background: var(--border-light); color: var(--text-muted); border: 1px solid var(--border-color); }
 
 .badge-status {
   display: inline-flex;

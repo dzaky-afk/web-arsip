@@ -112,7 +112,7 @@ export default function DMSApp() {
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   
   // Login Access Control States
-  const [loginNip, setLoginNip] = useState("19850712 201001 1 008");
+  const [loginNip, setLoginNip] = useState("");
   const [loginError, setLoginError] = useState("");
   const [isShaking, setIsShaking] = useState(false);
 
@@ -1550,7 +1550,9 @@ export default function DMSApp() {
                             </td>
                             <td><span className="badge badge-category">{doc.category}</span></td>
                             <td>
-                              <span className="badge-approval approved">Tersimpan di Server</span>
+                              <span className="badge-approval approved" style={{ whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                <CheckCircle2 size={12} /> Tersimpan
+                              </span>
                             </td>
                             <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{doc.date}</td>
                             <td>{doc.uploader}</td>
@@ -1771,9 +1773,6 @@ export default function DMSApp() {
                   <p className="page-subtitle">Manage staff access levels, roles, and global system configurations.</p>
                 </div>
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                  <button className="btn-secondary" style={{ padding: "10px 16px", display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 600 }} onClick={handleExportFullBackup}>
-                    <Database size={16} /> Backup Database JSON
-                  </button>
                   <button className="btn-primary-block" style={{ width: "auto", padding: "10px 18px", margin: 0 }} onClick={() => setShowAddStaffModal(true)}>
                     <UserPlus size={16} /> Add New Staff
                   </button>
