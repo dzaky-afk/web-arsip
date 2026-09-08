@@ -827,11 +827,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbody = document.getElementById('staff-table-body');
     if (!tbody) return;
 
+    const isAdmin = Boolean(state.user && state.user.role && state.user.role.toLowerCase().includes('admin'));
+
     tbody.innerHTML = state.staff.map(s => `
       <tr>
         <td>
           <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="${s.avatar}" alt="${s.name}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+            <img src="${s.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80'}" alt="${s.name}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
             <div>
               <div style="font-weight: 700;">${s.name}</div>
               <div style="font-size: 11.5px; color: var(--text-muted);">${s.email}</div>
@@ -847,15 +849,20 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td style="color: var(--text-muted); font-size: 13px;">${s.lastActive}</td>
         <td style="text-align: right;">
-          <button class="icon-btn" onclick="toggleStaffStatus(${s.id})" title="Ganti Status Aktif/Nonaktif">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-          </button>
+          <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
+            <button class="icon-btn" onclick="toggleStaffStatus(${s.id})" title="Ganti Status Aktif/Nonaktif">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            </button>
+            ${isAdmin ? `
+              <button class="icon-btn" onclick="deleteStaff(${s.id})" title="Hapus Akun Staf (Khusus Admin)" style="color: var(--danger);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            ` : ''}
+          </div>
         </td>
       </tr>
     `).join('');
   }
-
-
 
   window.toggleStaffStatus = function(id) {
     state.staff = state.staff.map(s => {
@@ -867,6 +874,23 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStaffTable();
     showToast('Status akun staf diperbarui.');
   };
+
+  window.deleteStaff = function(id) {
+    const isAdmin = Boolean(state.user && state.user.role && state.user.role.toLowerCase().includes('admin'));
+    if (!isAdmin) {
+      showToast('Akses Ditolak: Hanya Admin yang memiliki wewenang untuk menghapus staf.', 'error');
+      return;
+    }
+    const target = state.staff.find(s => s.id === id);
+    if (!target) return;
+
+    if (confirm(`Apakah Anda yakin ingin menghapus akun staf "${target.name}" secara permanen? Hak akses login pegawai ini akan dicabut.`)) {
+      state.staff = state.staff.filter(s => s.id !== id);
+      renderStaffTable();
+      showToast(`Akun staf "${target.name}" berhasil dihapus.`);
+    }
+  };
+
 
   function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');

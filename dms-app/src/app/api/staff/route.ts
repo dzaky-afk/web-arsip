@@ -167,3 +167,40 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Failed to update staff" }, { status: 500 });
   }
 }
+
+// DELETE: Remove a staff member from Supabase & fallback JSON
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const idParam = searchParams.get("id");
+    if (!idParam) {
+      return NextResponse.json({ error: "Missing staff id" }, { status: 400 });
+    }
+    const id = Number(idParam);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from("staff").delete().eq("id", id);
+      } catch (sbErr) {
+        console.warn("Supabase staff delete error:", sbErr);
+      }
+    }
+
+    try {
+      ensureStaffExists();
+      if (fs.existsSync(STAFF_FILE)) {
+        const data = fs.readFileSync(STAFF_FILE, "utf-8");
+        let staffList: StaffItem[] = JSON.parse(data || "[]");
+        staffList = staffList.filter((s: StaffItem) => s.id !== id);
+        fs.writeFileSync(STAFF_FILE, JSON.stringify(staffList, null, 2));
+      }
+    } catch (fsErr) {
+      console.warn("Read-only filesystem on staff delete:", fsErr);
+    }
+
+    return NextResponse.json({ success: true, message: "Staff removed successfully" });
+  } catch {
+    return NextResponse.json({ error: "Failed to delete staff" }, { status: 500 });
+  }
+}
+

@@ -24,6 +24,7 @@ import {
   Archive,
   FileCheck,
   UserPlus,
+  UserX,
   X,
   Inbox,
   ExternalLink,
@@ -58,13 +59,17 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const CURRENT_USER_STAFF = [
-  { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Just now" }
+  { id: 1, name: "Budi Santoso", email: "budi.s@setda.gov.id", role: "Admin", status: "Active", lastActive: "Just now", nip: "19850712 201001 1 008", division: "Umum" },
+  { id: 2, name: "Ahmad Fauzi", email: "ahmad.f@setda.gov.id", role: "Staff", status: "Active", lastActive: "2 hours ago", nip: "19900815 201402 1 005", division: "Umum" },
+  { id: 3, name: "Siti Nurhaliza", email: "siti.n@setda.gov.id", role: "Viewer", status: "Active", lastActive: "Yesterday", nip: "19951210 201901 2 001", division: "Umum" },
+  { id: 4, name: "Hendra Wijaya", email: "hendra.w@setda.gov.id", role: "Staff", status: "Active", lastActive: "3 days ago", nip: "19910324 201503 2 002", division: "Protokol" }
 ];
 
-export default function Home() {
+export default function DMSApp() {
+  // Mount Flag to Avoid Hydration Mismatch
   const [mounted, setMounted] = useState(false);
 
-  // Mobile Navigation State
+  // Mobile Navigation & Accordion State
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
@@ -105,6 +110,7 @@ export default function Home() {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [docToDelete, setDocToDelete] = useState<DocumentItem | null>(null);
+  const [staffToDelete, setStaffToDelete] = useState<StaffItem | null>(null);
   const [showBatchDeleteModal, setShowBatchDeleteModal] = useState(false);
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   
@@ -362,6 +368,36 @@ export default function Home() {
       showToastMsg("Gagal memperbarui status staf.", "error");
     }
   };
+
+  const isAdmin = Boolean(currentUser?.role && currentUser.role.toLowerCase().includes("admin"));
+
+  const handleDeleteStaff = async (id: number) => {
+    if (!isAdmin) {
+      showToastMsg("Akses Ditolak: Hanya Admin yang memiliki wewenang untuk menghapus staf.", "error");
+      return;
+    }
+    const target = staff.find((s) => s.id === id);
+    if (
+      target &&
+      target.nip &&
+      currentUser.nip &&
+      target.nip.replace(/\D/g, "") === currentUser.nip.replace(/\D/g, "")
+    ) {
+      showToastMsg("Tidak dapat menghapus akun Anda sendiri yang sedang aktif digunakan.", "warning");
+      return;
+    }
+
+    setStaff((prev) => prev.filter((s) => s.id !== id));
+    setStaffToDelete(null);
+    showToastMsg(`Akun staf "${target?.name || "Staf"}" berhasil dihapus secara permanen.`, "success");
+
+    try {
+      await fetch(`/api/staff?id=${id}`, { method: "DELETE" });
+    } catch (err) {
+      console.warn("Server staff DELETE sync notice:", err);
+    }
+  };
+
 
   const handleExportFullBackup = () => {
     const backupData = {
@@ -1754,9 +1790,21 @@ export default function Home() {
                           </td>
                           <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{s.lastActive}</td>
                           <td style={{ textAlign: "right" }}>
-                            <button className="icon-btn" onClick={() => handleToggleStaffStatus(s.id)} title="Ganti Status Aktif/Nonaktif">
-                              <RotateCcw size={16} />
-                            </button>
+                            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: "6px" }}>
+                              <button className="icon-btn" onClick={() => handleToggleStaffStatus(s.id)} title="Ganti Status Aktif/Nonaktif">
+                                <RotateCcw size={16} />
+                              </button>
+                              {isAdmin && (
+                                <button
+                                  className="icon-btn"
+                                  style={{ color: "var(--danger)" }}
+                                  onClick={() => setStaffToDelete(s)}
+                                  title="Hapus Akun Staf (Khusus Admin)"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -2231,6 +2279,94 @@ export default function Home() {
                   }}
                 >
                   <Trash2 size={16} /> Ya, Hapus Semua ({selectedDocIds.length})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE STAFF CONFIRMATION MODAL (ADMIN ONLY) */}
+      {staffToDelete && (
+        <div className="delete-confirm-modal-overlay" onClick={() => setStaffToDelete(null)}>
+          <div className="delete-confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-modal-backdrop-glow"></div>
+            
+            <div className="delete-modal-top-bar">
+              <button
+                type="button"
+                className="delete-modal-close-btn"
+                onClick={() => setStaffToDelete(null)}
+                title="Tutup"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="delete-modal-header-centered">
+              <div className="delete-icon-outer-ring">
+                <div className="delete-icon-inner-badge">
+                  <UserX size={24} />
+                </div>
+              </div>
+              <h3 className="delete-modal-title">Hapus Akun Staf Permanen?</h3>
+              <p className="delete-modal-subtitle">
+                Akses khusus Administrator. Akun staf ini akan dihapus dari server pusat dan database Setda serta dicabut hak akses loginnya.
+              </p>
+            </div>
+
+            <div className="delete-modal-body-custom">
+              {/* STAFF PREVIEW CARD */}
+              <div className="delete-file-preview-card" style={{ alignItems: "center" }}>
+                <div className="user-avatar-icon" style={{ width: "42px", height: "42px", background: "rgba(239, 68, 68, 0.12)", color: "var(--danger)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <User size={22} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="delete-file-name-text" title={staffToDelete.name} style={{ fontSize: "14.5px" }}>
+                    {staffToDelete.name}
+                  </div>
+                  <div className="delete-file-meta-row">
+                    <span className="delete-meta-tag">{staffToDelete.role}</span>
+                    <span>•</span>
+                    <span>Bagian {staffToDelete.division || "Umum"}</span>
+                    {staffToDelete.nip && (
+                      <>
+                        <span>•</span>
+                        <span>NIP: {staffToDelete.nip}</span>
+                      </>
+                    )}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>
+                    {staffToDelete.email}
+                  </div>
+                </div>
+              </div>
+
+              {/* WARNING CALLOUT BANNER */}
+              <div className="delete-warning-banner">
+                <AlertCircle size={17} style={{ flexShrink: 0, marginTop: "1px" }} />
+                <div>
+                  <strong>Peringatan Administrator:</strong> Penghapusan akun ini bersifat permanen. Pegawai ini tidak akan dapat login lagi ke sistem arsip digital Setda.
+                </div>
+              </div>
+
+              {/* MODAL FOOTER BUTTONS */}
+              <div className="delete-modal-footer-actions">
+                <button
+                  type="button"
+                  className="delete-btn-cancel"
+                  onClick={() => setStaffToDelete(null)}
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  className="delete-btn-confirm"
+                  onClick={async () => {
+                    await handleDeleteStaff(staffToDelete.id);
+                  }}
+                >
+                  <Trash2 size={16} /> Ya, Hapus Staf Ini
                 </button>
               </div>
             </div>
