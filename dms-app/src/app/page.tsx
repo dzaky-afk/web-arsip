@@ -1207,57 +1207,112 @@ export default function DMSApp() {
                     <h3 className="card-title">Recent Activity (Server Storage)</h3>
                     <span className="card-action-link" onClick={() => setCurrentView("all-documents")}>View All</span>
                   </div>
-                  <div className="table-responsive">
-                    {documents.length > 0 ? (
-                      <table className="data-table">
-                        <thead>
-                          <tr>
-                            <th>FILE NAME</th>
-                            <th>CATEGORY</th>
-                            <th>DATE MODIFIED</th>
-                            <th style={{ textAlign: "right" }}>ACTION</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {documents.map((doc) => (
-                            <tr key={doc.id} onClick={() => setSelectedDoc(doc)}>
-                              <td>
-                                <div className="file-name-cell">
-                                  <div className={`file-type-icon ${doc.type}`}>{doc.type.toUpperCase()}</div>
-                                  <div>
-                                    <div style={{ fontWeight: 600 }}>{doc.name}</div>
-                                    <div className="file-meta">{doc.size} • {doc.version}</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td><span className="badge badge-category">{doc.category}</span></td>
-                              <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{doc.date}</td>
-                              <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
-                                <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Pratinjau Dokumen">
-                                  <Eye size={16} />
-                                </button>
-                                <button className="icon-btn" onClick={() => handleDownloadDocument(doc)} title="Unduh Berkas ke Komputer">
-                                  <Download size={16} />
-                                </button>
-                                <button className="icon-btn" onClick={() => setDocToDelete(doc)} title="Hapus Berkas">
-                                  <Trash2 size={16} />
-                                </button>
-                              </td>
+                  {documents.length > 0 ? (
+                    <>
+                      {/* DESKTOP TABLE VIEW */}
+                      <div className="table-responsive desktop-only-table">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>FILE NAME</th>
+                              <th>CATEGORY</th>
+                              <th>DATE MODIFIED</th>
+                              <th style={{ textAlign: "right" }}>ACTION</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>
-                        <Inbox size={40} style={{ margin: "0 auto 12px auto", opacity: 0.5 }} />
-                        <h4 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-main)", marginBottom: "4px" }}>Belum ada berkas terunggah di server</h4>
-                        <p style={{ fontSize: "13px", marginBottom: "16px" }}>Setiap berkas yang diunggah staf akan langsung tersimpan di server pusat dan dapat diakses oleh semua pengguna.</p>
-                        <button className="btn-primary-block" style={{ width: "auto", margin: "0 auto", padding: "8px 20px" }} onClick={() => setCurrentView("uploads")}>
-                          <UploadCloud size={16} /> Upload Berkas Baru
-                        </button>
+                          </thead>
+                          <tbody>
+                            {documents.map((doc) => (
+                              <tr key={doc.id} onClick={() => setSelectedDoc(doc)}>
+                                <td>
+                                  <div className="file-name-cell">
+                                    <div className={`file-type-icon ${doc.type}`}>{doc.type.toUpperCase()}</div>
+                                    <div>
+                                      <div style={{ fontWeight: 600 }}>{doc.name}</div>
+                                      <div className="file-meta">{doc.size} • {doc.version}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td><span className="badge badge-category">{doc.category}</span></td>
+                                <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{doc.date}</td>
+                                <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                                  <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Pratinjau Dokumen">
+                                    <Eye size={16} />
+                                  </button>
+                                  <button className="icon-btn" onClick={() => handleDownloadDocument(doc)} title="Unduh Berkas ke Komputer">
+                                    <Download size={16} />
+                                  </button>
+                                  <button className="icon-btn" onClick={() => setDocToDelete(doc)} title="Hapus Berkas">
+                                    <Trash2 size={16} />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                    )}
-                  </div>
+
+                      {/* MOBILE VIEW FOR RECENT ACTIVITY (ZERO HORIZONTAL SCROLL) */}
+                      <div className="mobile-only-list mobile-card-feed">
+                        {documents.map((doc) => (
+                          <div key={doc.id} className="mobile-doc-card" onClick={() => setSelectedDoc(doc)}>
+                            <div className="mobile-doc-header">
+                              <div className="mobile-doc-info">
+                                <div className={`file-type-icon ${doc.type}`}>{doc.type.toUpperCase()}</div>
+                                <div className="mobile-doc-titles">
+                                  <span className="mobile-doc-name">{doc.name}</span>
+                                  <span className="mobile-doc-submeta">{doc.size} • {doc.version}</span>
+                                </div>
+                              </div>
+                              <span className="badge badge-category">{doc.category}</span>
+                            </div>
+
+                            <div className="mobile-doc-middle">
+                              <div className="mobile-doc-date-chip">
+                                <Clock size={12} />
+                                <span>{doc.date}</span>
+                              </div>
+                              <span className="badge-approval approved" style={{ fontSize: "11px", padding: "2px 7px" }}>
+                                <CheckCircle2 size={11} /> Tersimpan
+                              </span>
+                            </div>
+
+                            <div className="mobile-doc-actions" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                className="mobile-action-btn btn-view"
+                                onClick={() => setSelectedDoc(doc)}
+                                title="Pratinjau Dokumen"
+                              >
+                                <Eye size={14} /> Pratinjau
+                              </button>
+                              <button
+                                className="mobile-action-btn btn-download"
+                                onClick={() => handleDownloadDocument(doc)}
+                                title="Unduh Berkas"
+                              >
+                                <Download size={14} /> Unduh
+                              </button>
+                              <button
+                                className="mobile-action-btn btn-delete"
+                                onClick={() => setDocToDelete(doc)}
+                                title="Hapus Berkas"
+                              >
+                                <Trash2 size={14} /> Hapus
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>
+                      <Inbox size={40} style={{ margin: "0 auto 12px auto", opacity: 0.5 }} />
+                      <h4 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-main)", marginBottom: "4px" }}>Belum ada berkas terunggah di server</h4>
+                      <p style={{ fontSize: "13px", marginBottom: "16px" }}>Setiap berkas yang diunggah staf akan langsung tersimpan di server pusat dan dapat diakses oleh semua pengguna.</p>
+                      <button className="btn-primary-block" style={{ width: "auto", margin: "0 auto", padding: "8px 20px" }} onClick={() => setCurrentView("uploads")}>
+                        <UploadCloud size={16} /> Upload Berkas Baru
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="card">
@@ -1509,65 +1564,145 @@ export default function DMSApp() {
               )}
 
               <div className="card">
-                <div className="table-responsive">
-                  {filteredDocuments.length > 0 ? (
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th style={{ width: "40px" }}>
-                            <input type="checkbox" onChange={handleSelectAllDocs} checked={selectedDocIds.length > 0 && selectedDocIds.length === filteredDocuments.length} />
-                          </th>
-                          <th>FILE NAME</th>
-                          <th>CATEGORY</th>
-                          <th>STATUS</th>
-                          <th>DATE UPLOADED</th>
-                          <th>UPLOADER</th>
-                          <th style={{ textAlign: "right" }}>ACTIONS</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredDocuments.map((doc) => (
-                          <tr key={doc.id} onClick={() => setSelectedDoc(doc)}>
-                            <td onClick={(e) => e.stopPropagation()}>
-                              <input type="checkbox" checked={selectedDocIds.includes(doc.id)} onChange={() => handleSelectDoc(doc.id)} />
-                            </td>
-                            <td>
-                              <div className="file-name-cell">
-                                <div className={`file-type-icon ${doc.type}`}>{doc.type.toUpperCase()}</div>
-                                <div>
-                                  <div style={{ fontWeight: 600 }}>{doc.name}</div>
-                                  <div className="file-meta">{doc.size} • {doc.version}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td><span className="badge badge-category">{doc.category}</span></td>
-                            <td>
-                              <span className="badge-approval approved" style={{ whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: "5px" }}>
-                                <CheckCircle2 size={12} /> Tersimpan
-                              </span>
-                            </td>
-                            <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{doc.date}</td>
-                            <td>{doc.uploader}</td>
-                            <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
-                              <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Lihat Pratinjau"><Eye size={16} /></button>
-                              <button className="icon-btn" onClick={() => handleDownloadDocument(doc)} title="Unduh Berkas ke Komputer"><Download size={16} /></button>
-                              <button className="icon-btn" onClick={() => setDocToDelete(doc)} title="Hapus Berkas"><Trash2 size={16} /></button>
-                            </td>
+                {filteredDocuments.length > 0 ? (
+                  <>
+                    {/* DESKTOP TABLE VIEW */}
+                    <div className="table-responsive desktop-only-table">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: "40px" }}>
+                              <input type="checkbox" onChange={handleSelectAllDocs} checked={selectedDocIds.length > 0 && selectedDocIds.length === filteredDocuments.length} />
+                            </th>
+                            <th>FILE NAME</th>
+                            <th>CATEGORY</th>
+                            <th>STATUS</th>
+                            <th>DATE UPLOADED</th>
+                            <th>UPLOADER</th>
+                            <th style={{ textAlign: "right" }}>ACTIONS</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>
-                      <Inbox size={40} style={{ margin: "0 auto 12px auto", opacity: 0.5 }} />
-                      <h4 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-main)", marginBottom: "4px" }}>Belum ada berkas terunggah</h4>
-                      <p style={{ fontSize: "13px", marginBottom: "16px" }}>Upload berkas asli dari komputer Anda untuk dibagikan ke seluruh staf.</p>
-                      <button className="btn-primary-block" style={{ width: "auto", margin: "0 auto", padding: "8px 20px" }} onClick={() => setCurrentView("uploads")}>
-                        <UploadCloud size={16} /> Upload Berkas Baru
-                      </button>
+                        </thead>
+                        <tbody>
+                          {filteredDocuments.map((doc) => (
+                            <tr key={doc.id} onClick={() => setSelectedDoc(doc)}>
+                              <td onClick={(e) => e.stopPropagation()}>
+                                <input type="checkbox" checked={selectedDocIds.includes(doc.id)} onChange={() => handleSelectDoc(doc.id)} />
+                              </td>
+                              <td>
+                                <div className="file-name-cell">
+                                  <div className={`file-type-icon ${doc.type}`}>{doc.type.toUpperCase()}</div>
+                                  <div>
+                                    <div style={{ fontWeight: 600 }}>{doc.name}</div>
+                                    <div className="file-meta">{doc.size} • {doc.version}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td><span className="badge badge-category">{doc.category}</span></td>
+                              <td>
+                                <span className="badge-approval approved" style={{ whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                  <CheckCircle2 size={12} /> Tersimpan
+                                </span>
+                              </td>
+                              <td style={{ color: "var(--text-muted)", fontSize: "13px" }}>{doc.date}</td>
+                              <td>{doc.uploader}</td>
+                              <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                                <button className="icon-btn" onClick={() => setSelectedDoc(doc)} title="Lihat Pratinjau"><Eye size={16} /></button>
+                                <button className="icon-btn" onClick={() => handleDownloadDocument(doc)} title="Unduh Berkas ke Komputer"><Download size={16} /></button>
+                                <button className="icon-btn" onClick={() => setDocToDelete(doc)} title="Hapus Berkas"><Trash2 size={16} /></button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  )}
-                </div>
+
+                    {/* MOBILE CARD VIEW FOR ALL DOCUMENTS */}
+                    <div className="mobile-only-list mobile-card-feed">
+                      {/* Mobile Select All Bar */}
+                      <div className="mobile-select-all-bar" onClick={(e) => e.stopPropagation()}>
+                        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, color: "var(--text-main)" }}>
+                          <input
+                            type="checkbox"
+                            onChange={handleSelectAllDocs}
+                            checked={selectedDocIds.length > 0 && selectedDocIds.length === filteredDocuments.length}
+                            style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                          />
+                          <span>Pilih Semua ({filteredDocuments.length} berkas)</span>
+                        </label>
+                      </div>
+
+                      {filteredDocuments.map((doc) => (
+                        <div key={doc.id} className="mobile-doc-card" onClick={() => setSelectedDoc(doc)}>
+                          <div className="mobile-doc-header">
+                            <div className="mobile-doc-info">
+                              <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", paddingTop: "2px" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedDocIds.includes(doc.id)}
+                                  onChange={() => handleSelectDoc(doc.id)}
+                                  style={{ width: "17px", height: "17px", cursor: "pointer" }}
+                                />
+                              </div>
+                              <div className={`file-type-icon ${doc.type}`}>{doc.type.toUpperCase()}</div>
+                              <div className="mobile-doc-titles">
+                                <span className="mobile-doc-name">{doc.name}</span>
+                                <span className="mobile-doc-submeta">{doc.size} • {doc.version}</span>
+                              </div>
+                            </div>
+                            <span className="badge badge-category">{doc.category}</span>
+                          </div>
+
+                          <div className="mobile-doc-middle">
+                            <div className="mobile-doc-date-chip">
+                              <Clock size={12} />
+                              <span>{doc.date}</span>
+                            </div>
+                            <div className="mobile-doc-uploader-chip">
+                              <User size={12} />
+                              <span>{doc.uploader}</span>
+                            </div>
+                            <span className="badge-approval approved" style={{ fontSize: "11px", padding: "2px 7px" }}>
+                              <CheckCircle2 size={11} /> Tersimpan
+                            </span>
+                          </div>
+
+                          <div className="mobile-doc-actions" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className="mobile-action-btn btn-view"
+                              onClick={() => setSelectedDoc(doc)}
+                              title="Pratinjau Dokumen"
+                            >
+                              <Eye size={14} /> Pratinjau
+                            </button>
+                            <button
+                              className="mobile-action-btn btn-download"
+                              onClick={() => handleDownloadDocument(doc)}
+                              title="Unduh Berkas"
+                            >
+                              <Download size={14} /> Unduh
+                            </button>
+                            <button
+                              className="mobile-action-btn btn-delete"
+                              onClick={() => setDocToDelete(doc)}
+                              title="Hapus Berkas"
+                            >
+                              <Trash2 size={14} /> Hapus
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>
+                    <Inbox size={40} style={{ margin: "0 auto 12px auto", opacity: 0.5 }} />
+                    <h4 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-main)", marginBottom: "4px" }}>Belum ada berkas terunggah</h4>
+                    <p style={{ fontSize: "13px", marginBottom: "16px" }}>Upload berkas asli dari komputer Anda untuk dibagikan ke seluruh staf.</p>
+                    <button className="btn-primary-block" style={{ width: "auto", margin: "0 auto", padding: "8px 20px" }} onClick={() => setCurrentView("uploads")}>
+                      <UploadCloud size={16} /> Upload Berkas Baru
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
           )}
@@ -1772,7 +1907,7 @@ export default function DMSApp() {
               </div>
 
               <div className="card">
-                <div className="table-responsive">
+                <div className="table-responsive desktop-only-table">
                   <table className="data-table">
                     <thead>
                       <tr>
@@ -1831,6 +1966,57 @@ export default function DMSApp() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* MOBILE VIEW FOR STAFF DIRECTORY (ZERO HORIZONTAL SCROLL) */}
+                <div className="mobile-only-list mobile-card-feed">
+                  {staff.map((s) => (
+                    <div key={s.id} className="mobile-staff-card">
+                      <div className="mobile-staff-header">
+                        <div className="mobile-staff-info">
+                          <div className="user-avatar-icon" style={{ width: "38px", height: "38px", flexShrink: 0 }}>
+                            <User size={18} />
+                          </div>
+                          <div className="mobile-staff-titles">
+                            <span className="mobile-staff-name">{s.name}</span>
+                            <span className="mobile-staff-email">{s.email}</span>
+                            <span className="mobile-staff-division">Bagian: {s.division || "Umum"}</span>
+                          </div>
+                        </div>
+                        <span className={`role-badge ${s.role.toLowerCase()}`}>{s.role}</span>
+                      </div>
+
+                      <div className="mobile-staff-middle">
+                        <div className="badge-status">
+                          <span className={`status-dot ${s.status.toLowerCase()}`}></span>
+                          <span>{s.status}</span>
+                        </div>
+                        <div className="mobile-staff-active-chip">
+                          <Clock size={12} />
+                          <span>Aktif: {s.lastActive}</span>
+                        </div>
+                      </div>
+
+                      <div className="mobile-staff-actions">
+                        <button
+                          className="mobile-action-btn btn-toggle"
+                          onClick={() => handleToggleStaffStatus(s.id)}
+                          title="Ganti Status Aktif/Nonaktif"
+                        >
+                          <RotateCcw size={14} /> Ganti Status
+                        </button>
+                        {isAdmin && (
+                          <button
+                            className="mobile-action-btn btn-delete"
+                            onClick={() => setStaffToDelete(s)}
+                            title="Hapus Akun Staf"
+                          >
+                            <Trash2 size={14} /> Hapus Staf
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>

@@ -2755,3 +2755,312 @@ body.dark-mode .delete-warning-banner {
     display: none;
   }
 }
+
+/* ==========================================================================
+   ZERO-HORIZONTAL-SCROLL MOBILE CARDS FOR DOCUMENTS & STAFF
+   ========================================================================== */
+
+.desktop-only-table {
+  display: block;
+  width: 100%;
+}
+
+.mobile-only-list {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-only-table {
+    display: none !important;
+  }
+
+  .mobile-only-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mobile-card-feed {
+    padding: 12px 14px 14px 14px;
+  }
+
+  .card-header {
+    padding: 14px 16px !important;
+  }
+
+  .table-responsive {
+    overflow-x: visible !important;
+  }
+
+  /* Mobile Document Card */
+  .mobile-doc-card {
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  body.dark-mode .mobile-doc-card {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .mobile-doc-card:active {
+    transform: scale(0.99);
+    border-color: var(--primary-border);
+  }
+
+  .mobile-doc-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mobile-doc-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-doc-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-doc-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.35;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-doc-submeta {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .mobile-doc-middle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+
+  .mobile-doc-date-chip,
+  .mobile-doc-uploader-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--border-light);
+    border: 1px solid var(--border-color);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  body.dark-mode .mobile-doc-date-chip,
+  body.dark-mode .mobile-doc-uploader-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .mobile-doc-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 10px;
+    margin-top: 2px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mobile-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 4px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-main);
+    transition: all 0.15s ease;
+    touch-action: manipulation;
+    min-height: 36px;
+    user-select: none;
+  }
+
+  .mobile-action-btn:active {
+    transform: scale(0.96);
+  }
+
+  .mobile-action-btn.btn-view {
+    color: var(--primary);
+    border-color: var(--primary-border);
+    background: var(--primary-light);
+  }
+
+  .mobile-action-btn.btn-download {
+    color: #059669;
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.08);
+  }
+
+  body.dark-mode .mobile-action-btn.btn-download {
+    color: #34d399;
+    border-color: rgba(52, 211, 153, 0.3);
+    background: rgba(16, 185, 129, 0.12);
+  }
+
+  .mobile-action-btn.btn-delete {
+    color: #dc2626;
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  body.dark-mode .mobile-action-btn.btn-delete {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.3);
+    background: rgba(239, 68, 68, 0.12);
+  }
+
+  .mobile-action-btn.btn-toggle {
+    color: var(--primary);
+    border-color: var(--primary-border);
+    background: var(--primary-light);
+  }
+
+  .mobile-select-all-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--border-light);
+    border-radius: 10px;
+    margin-bottom: 2px;
+  }
+
+  /* Mobile Staff Card */
+  .mobile-staff-card {
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.dark-mode .mobile-staff-card {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-staff-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .mobile-staff-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-staff-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-staff-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+
+  .mobile-staff-email {
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+
+  .mobile-staff-division {
+    font-size: 11px;
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .mobile-staff-middle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 2px 0;
+  }
+
+  .mobile-staff-active-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .mobile-staff-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 10px;
+  }
+
+  .mobile-staff-actions .mobile-action-btn {
+    flex: 1;
+  }
+}
