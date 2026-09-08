@@ -893,14 +893,6 @@ export default function DMSApp() {
               Masuk ke System DMS Bagian Umum <ArrowRight size={16} />
             </button>
           </form>
-
-          <div className="login-demo-helper" style={{ marginTop: "20px", padding: "12px", background: "var(--primary-light)", border: "1px solid var(--primary-border)", borderRadius: "var(--radius-md)", fontSize: "11.5px", textAlign: "left", color: "var(--text-main)" }}>
-            <div style={{ fontWeight: 700, color: "var(--primary)", marginBottom: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
-              ℹ️ Info Login NIP Pegawai
-            </div>
-            <div><strong>Master Admin Bagian Umum:</strong> 19850712 201001 1 008</div>
-            <div style={{ marginTop: "4px", fontSize: "11px", color: "var(--text-muted)" }}>* Anda juga dapat login dengan NIP staf asli yang Anda daftarkan melalui menu <em>User & System Management</em>.</div>
-          </div>
         </div>
       </div>
     );
